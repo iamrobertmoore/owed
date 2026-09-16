@@ -10,13 +10,15 @@
 
 <p align="center"><img src="docs/brand/readme-banner.svg" alt="Owed. Give your agent an address, and it goes and gets what you are owed." width="1000"></p>
 
-<p align="center"><strong>An agent with its own email address, so the paper trail has somewhere to land and someone to chase it.</strong></p>
+<p align="center"><strong>Your agent holds the paper trail, so it finds what you are owed instead of waiting to be told.</strong></p>
 
 <p align="center"><a href="{{LIVE}}">Open the ledger</a> · <a href="{{LIVE}}#claim={{CLAIM_FOUND}}">Read a claim it found</a> · <a href="{{LIVE}}#claim={{CLAIM_POLITE}}">See an apology settle nothing</a></p>
 
-Owed gives your agent an address of its own. You forward what already lands in your inbox: order confirmations, bookings, renewal notices. It reads the company's own published terms, works out what you are owed, writes the letter that cites the clause by its reference, and asks you before it sends anything.
+Every other tool waits for you to describe a dispute. Owed is holding the paper trail, so it notices one.
 
-That is the whole difference. Every other tool waits for you to describe a dispute. Owed is holding the paper trail, so it notices one. Nobody has to remember that a lens arrived cracked six weeks ago, or that a hotel took a deposit it said it would return.
+You forward what already lands in your inbox anyway: order confirmations, bookings, renewal notices. Owed reads the company's own published terms, works out what you are owed, writes the letter that cites the clause by its reference, and asks you before it sends anything.
+
+That is the difference that matters. Nobody has to remember that a lens arrived cracked six weeks ago, or that a hotel took a deposit it said it would return. The agent is holding the receipt, so the claim finds you rather than the other way round.
 
 I am the user. My paper trail is the usual mess: a lens, two hotel bookings, three subscriptions I meant to cancel, train tickets. The refunds I never chased are the ones too small to be worth an evening and too annoying to let go. Owed is for the person who is not going to spend that evening, and should not have to.
 
