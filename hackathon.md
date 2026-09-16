@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-15T17:01:13Z
-- **Last updated:** 2026-09-16T16:22:41Z
+- **Last updated:** 2026-09-16T16:40:13Z
 
 ## Log
 
@@ -185,3 +185,43 @@ treated as retryable by the component and still arrives here as a throw.
 
 `README.md` now states the ceiling out loud: one of the three inboxes is the
 shared guest address, so two accounts can hold one of their own.
+
+### 2026-09-16 - verified
+
+The AgentMail account is verified, which unblocks the half of the product that
+could not previously run at all. Before verification the account held exactly one
+inbox and `owed@agentmail.to` already occupied it, so `inboxes.provision` would
+have failed for the first real account to sign in. Read from
+`GET /v0/organizations` either side of the verify call: `inbox_limit` went 1 to
+3, `daily_send_limit` 10 to 100, and `agent_verified` false to true.
+
+Verifying also revealed three fields that were absent from the response before:
+
+```
+first_hour_recipient_limit: 5
+first_day_recipient_limit:  20
+first_week_recipient_limit: 50
+```
+
+That is a deliverability warm-up ramp. A new sending domain is not trusted, so
+recipients are capped at 5 in the first hour, 20 in the first day and 50 in the
+first week, before settling at 100 a day. Nothing here sends to that many
+addresses, so it is a constraint worth knowing rather than one to design around.
+
+**The real-account path was proved without spending anything.** A second inbox was
+created, which took `inbox_count` from 1 to 2 of 3, and then deleted, which
+returned it to 1 of 3. The allowance is real and the slot is reclaimable, and the
+account is back to holding only `owed@agentmail.to`.
+
+**A wrong diagnosis, recorded because the reasoning is the reusable part.** For
+most of an afternoon I treated the missing verification code as a delivery
+failure. It was not. The code carried a **24-hour** expiry, so the second sign-up
+five hours later did not trigger the documented "resend the OTP if expired", which
+is exactly why the organisation's `updated_at` never moved. Every measurement I
+took was correct. The conclusion I drew from them was wrong, and I stated it with
+more confidence than the evidence carried.
+
+The question that would have caught it is one I never asked: how long ago was the
+code sent? The answer was in the email, not in the API. An absent OTP in an API is
+not evidence about an email, and I let a pile of consistent measurements stand in
+for the one I had not taken.
