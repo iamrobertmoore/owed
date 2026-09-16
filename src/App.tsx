@@ -180,9 +180,12 @@ function Ledger() {
   const inbox = useQuery(api.inboxes.mine);
   const provision = useAction(api.inboxes.provision);
   const seedExample = useMutation(api.example.seedExample);
+  const loadExample = useMutation(api.example.loadExample);
 
   const [hashKey, setHashKey] = useState<string | null>(() => claimKeyFromHash());
   const [addressError, setAddressError] = useState<string | null>(null);
+  const [loadingExample, setLoadingExample] = useState(false);
+  const [exampleNote, setExampleNote] = useState<string | null>(null);
   const asked = useRef(false);
   const seeded = useRef(false);
 
@@ -216,6 +219,30 @@ function Ledger() {
     setHashKey(null);
   }
 
+  /**
+   * Put the worked example into this account's ledger, on request.
+   *
+   * A real account starts empty, which is the honest default but a poor thing
+   * to hand somebody who wants to see what the product does. The server
+   * refuses unless the ledger is empty, so this cannot bury a real claim.
+   */
+  async function load() {
+    setLoadingExample(true);
+    setExampleNote(null);
+    try {
+      const result = await loadExample({});
+      if (!result.seeded) {
+        setExampleNote(result.reason ?? "The example could not be loaded.");
+      }
+    } catch (e) {
+      setExampleNote(
+        e instanceof Error ? e.message : "The example could not be loaded.",
+      );
+    } finally {
+      setLoadingExample(false);
+    }
+  }
+
   // One address per person, created the first time they arrive. The free tier
   // allows three, so this is guarded rather than called on every render.
   useEffect(() => {
@@ -244,9 +271,16 @@ function Ledger() {
   }, [ledger, seedExample]);
 
   const totals = ledger?.totals;
-  // A guest's ledger is the seeded worked example. The UI has to be able to
-  // tell, so it can label provenance rather than assert it.
-  const isExample = (ledger?.claims ?? []).some((c) => c.demoKey !== undefined);
+  // The UI has to be able to tell seeded content from real content, so it can
+  // label provenance rather than assert it. A guest's ledger is the worked
+  // example entire. A real account can hold both, because loading the example
+  // is a deliberate act rather than a condition of arrival, and a figure that
+  // silently mixes the two is exactly the overclaim this product exists to
+  // catch.
+  const claims = ledger?.claims ?? [];
+  const exampleCount = claims.filter((c) => c.demoKey !== undefined).length;
+  const isExample = exampleCount > 0;
+  const allExample = isExample && exampleCount === claims.length;
 
   return (
     <div className="shell">
@@ -289,6 +323,19 @@ function Ledger() {
         </div>
       </div>
 
+      {/*
+        A headline figure is the easiest thing on this page to read as a claim
+        about the reader, so the block above has to say when the worked example
+        is part of the arithmetic.
+      */}
+      {isExample && (
+        <div className="example-note">
+          {allExample
+            ? "These figures are the worked example rather than a real ledger: four claims against fictional companies, reconstructed rather than received. Nothing was sent and nothing was spent."
+            : "These figures include the worked example. Its claims are marked in the list below."}
+        </div>
+      )}
+
       <AddressPanel address={inbox?.address} shared={inbox?.shared} error={addressError} />
 
       <section>
@@ -311,6 +358,31 @@ function Ledger() {
               It will not invent a claim to fill this space. A claim only exists when a
               specific clause commits them to a specific remedy.
             </div>
+
+            {/*
+              The example is on request rather than seeded into every real
+              account, because content turning up in somebody's ledger
+              uninvited is the failure mode this product exists to catch. The
+              server refuses unless the ledger is empty, so it can never sit
+              beside a real claim and be read as one.
+            */}
+            <div className="example-invite">
+              <button
+                className="act ghost"
+                onClick={() => void load()}
+                disabled={loadingExample}
+                type="button"
+              >
+                {loadingExample ? "Loading..." : "Load the worked example"}
+              </button>
+              <span className="hint">
+                Four claims against fictional companies, reconstructed rather than
+                received, so there is something to look at without waiting for post.
+                Nothing is transmitted, nothing is spent, and it only loads onto an
+                empty ledger.
+              </span>
+            </div>
+            {exampleNote && <div className="error">{exampleNote}</div>}
           </div>
         ) : (
           <div className="rows">

@@ -13,7 +13,6 @@ import type * as aiCache from "../aiCache.js";
 import type * as auth from "../auth.js";
 import type * as claims from "../claims.js";
 import type * as crons from "../crons.js";
-import type * as devtest from "../devtest.js";
 import type * as example from "../example.js";
 import type * as http from "../http.js";
 import type * as inboxes from "../inboxes.js";
@@ -36,7 +35,6 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   claims: typeof claims;
   crons: typeof crons;
-  devtest: typeof devtest;
   example: typeof example;
   http: typeof http;
   inboxes: typeof inboxes;

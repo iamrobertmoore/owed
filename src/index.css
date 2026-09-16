@@ -145,6 +145,20 @@ body::before {
   color: var(--muted);
 }
 
+/*
+  Provenance for the block above. The figures are honest arithmetic over
+  whatever is in the ledger, which is precisely why the block has to say when
+  part of that is the worked example. A negative top margin because the totals
+  grid already carries a full 40px below it.
+*/
+.example-note {
+  margin: -26px 0 40px;
+  max-width: 62ch;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
 /* ----------------------------------------------------------- the address -- */
 
 .address {
@@ -552,6 +566,31 @@ button.act.ghost {
   font-size: 19px;
   color: var(--ink);
   margin-bottom: 8px;
+}
+
+/*
+  The invite to load the worked example, which appears on an empty ledger only.
+  It sits under the empty state rather than in the masthead because it is the
+  second thing a reader wants, not the first: send your own post, or look at a
+  worked one.
+*/
+.example-invite {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px dashed var(--line-strong);
+}
+
+.example-invite .hint {
+  max-width: 46ch;
+  text-align: left;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--faint);
 }
 
 .signin {

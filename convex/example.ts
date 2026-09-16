@@ -421,13 +421,16 @@ function placeholderVector(seed: string): number[] {
 /**
  * Seed the worked example into one user's ledger.
  *
- * Idempotent, so a reload, a remount or a second tab cannot double it, and
- * guarded so it only ever runs for a guest with nothing in the ledger.
+ * Idempotent, so a reload, a remount or a second tab cannot double it.
  *
- * Both guards live here rather than in the public mutation below, because a
- * deployment cannot mint a JWT locally: anything behind `getAuthUserId` is
- * unverifiable until the app is live. Keeping the decisions separate from the
- * session lookup means the decisions can be tested.
+ * The guard that matters lives here rather than behind `getAuthUserId`, because
+ * a deployment cannot mint a JWT locally and anything behind a session is
+ * unverifiable until the app is live. Keeping the decision separate from the
+ * session lookup is what makes it testable.
+ *
+ * Whether a registered account is allowed to ask for the example is the
+ * caller's business, not this function's. What this function refuses, always,
+ * is adding to a ledger that already has something in it.
  */
 export const seedForUser = internalMutation({
   args: { userId: v.id("users") },
@@ -436,10 +439,6 @@ export const seedForUser = internalMutation({
 
     const user = await ctx.db.get(userId);
     if (!user) return { seeded: false, reason: "No user" };
-
-    // A real account's ledger is its own. Somebody who signed up should never
-    // find content in it that they did not create.
-    if (user.email) return { seeded: false, reason: "Not a guest" };
 
     const existing = await ctx.db
       .query("claims")
@@ -573,10 +572,38 @@ export const seedForUser = internalMutation({
 });
 
 /**
- * The public entry point. The front end calls this once when a signed-in user's
- * ledger is empty, and the guards above decide whether anything happens.
+ * Called once on arrival. A guest's ledger would otherwise be empty, and an
+ * empty ledger is a bad first impression and a worse demo: the product's whole
+ * argument is that a claim can be found rather than described, and there is
+ * nothing to look at until somebody forwards an email and waits.
+ *
+ * Guests only. Somebody who made a real account gets an empty ledger and can
+ * ask for the example explicitly, because content appearing in a real ledger
+ * uninvited is exactly the kind of thing this product is supposed to be careful
+ * about.
  */
 export const seedExample = mutation({
+  args: {},
+  handler: async (ctx): Promise<{ seeded: boolean; reason?: string }> => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) return { seeded: false, reason: "Not signed in" };
+
+    const user = await ctx.db.get(userId);
+    if (user?.email) return { seeded: false, reason: "Not a guest" };
+
+    return await ctx.runMutation(internal.example.seedForUser, { userId });
+  },
+});
+
+/**
+ * Load the worked example into a real account, on request.
+ *
+ * This exists so the product can be understood, and recorded, without
+ * forwarding an email and waiting. It is the same content as the guest seed and
+ * it obeys the same rule: nothing is added to a ledger that already holds
+ * something, so the example can never mix with real claims.
+ */
+export const loadExample = mutation({
   args: {},
   handler: async (ctx): Promise<{ seeded: boolean; reason?: string }> => {
     const userId = await getAuthUserId(ctx);
