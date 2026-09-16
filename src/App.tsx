@@ -521,7 +521,7 @@ function AddressPanel({
   return (
     <div className="address">
       <div>
-        <div className="label">{shared ? "Example address" : "Your agent's address"}</div>
+        <div className="label">Your agent's address</div>
         <div className="value">
           {address ?? (error ? "Could not open an address" : "Opening one...")}
         </div>
@@ -531,7 +531,7 @@ function AddressPanel({
           {error
             ? error
             : shared
-              ? "This is the shared example address, shown so the panel is real and can be copied. Mail sent to it is not routed onto your ledger, because one address shared by every visitor cannot honestly be attributed to one of them. A real account gets its own."
+              ? "Yours. Forward a confirmation to it and watch it become a record. It is an alias on the inbox every guest shares, so it costs nothing and nobody else's post reaches your ledger."
               : "Give this out instead of your own address. The agent reads what arrives, and nothing else."}
         </div>
         <button className="act ghost" onClick={copy} disabled={!address} type="button">

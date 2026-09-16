@@ -65,12 +65,26 @@ export const CLASSIFICATION = v.union(
 export default defineSchema({
   ...authTables,
 
-  /** One address per person. This is the product's front door. */
+  /**
+   * One address per person. This is the product's front door.
+   *
+   * A row is either an inbox the provider provisioned or, for a guest, an
+   * alias on the shared one. `onSharedInbox` tells them apart. `address` is
+   * what the inbound router reads, and it is unique across both kinds.
+   */
   inboxes: defineTable({
     userId: v.id("users"),
     address: v.string(),
     agentmailInboxId: v.string(),
     displayName: v.string(),
+    /**
+     * True when this address is an alias on the shared inbox rather than an
+     * inbox of its own. A guest is given `owed+<token>@…`, which the provider
+     * delivers to the shared inbox while keeping the tag in the envelope, so
+     * one row is all the routing needs and no guest spends one of the three
+     * provisioned inboxes.
+     */
+    onSharedInbox: v.optional(v.boolean()),
     /** Set once the first real message round trip has been proven. */
     verifiedAt: v.optional(v.number()),
     createdAt: v.number(),
