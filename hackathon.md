@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-15T17:01:13Z
-- **Last updated:** 2026-09-16T13:45:00Z
+- **Last updated:** 2026-09-16T16:22:41Z
 
 ## Log
 
@@ -145,3 +145,43 @@ the loaded ledger were built through the real components against fixtures and
 looked at. The button was pressed and the ledger filled while the address stayed
 the account's own, which is the property the recording depends on. The harness
 touched no source file and was deleted afterwards.
+
+### 2026-09-16 - 2cbc1db
+
+Checked the AgentMail allowance against the live account rather than against the
+pricing page, and the two did not agree. The page says the free plan allows
+three inboxes. `GET /v0/organizations` returned `inbox_limit: 1` and
+`daily_send_limit: 10`, and an attempt to create a second inbox was refused with
+HTTP 403:
+
+> This organization is not verified yet, so its limits are the pre-verification
+> defaults. Ask the human for the verification code emailed at sign-up and call
+> `POST /v0/agent/verify` with it. Verification raises these limits at no cost.
+
+Both numbers are right and the difference is verification. That is worth more
+than a corrected comment: the design assumes three addresses, and until the
+account is verified it can hold one, which `owed@agentmail.to` already is.
+Verification is not only what lifts the send restriction, it is what grants the
+allowance the rest of this was built on. Two comments in `convex/inboxes.ts` had
+stated the three as though it were unconditional, and a number in a comment that
+the provider's own API contradicts is worse than no number, so both now say
+which applies when (`convex/inboxes.ts`).
+
+The failure that mattered was the one past the last address. `createInbox`
+throws, and that was reaching the owner as an error trace on the one screen a
+judge is most likely to be looking at. It now returns a sentence naming the
+cause. The match is broad on purpose: Convex does not promise to carry custom
+properties on an error across a component boundary, so the 403 status and the
+`limit_exceeded` code are both tested for, and an unrecognised failure is
+reported as itself rather than assumed to be a limit. Guessing the cause of an
+unknown error would be the same mistake this log keeps recording, a claim that
+cannot be false.
+
+Checked that the component throws before writing the catch rather than after.
+`agentmailFetch` raises `AgentMailApiError` on any non-2xx
+(`node_modules/@agentmail/convex/dist/component/utils.js`), and 403 is absent
+from that file's `PERMANENT_STATUSES`, so the provider's limit refusal is
+treated as retryable by the component and still arrives here as a throw.
+
+`README.md` now states the ceiling out loud: one of the three inboxes is the
+shared guest address, so two accounts can hold one of their own.
