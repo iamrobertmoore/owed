@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-15T17:01:13Z
-- **Last updated:** 2026-09-16T16:40:13Z
+- **Last updated:** 2026-09-16T17:03:23Z
 
 ## Log
 
@@ -225,3 +225,60 @@ The question that would have caught it is one I never asked: how long ago was th
 code sent? The answer was in the email, not in the API. An absent OTP in an API is
 not evidence about an email, and I let a pile of consistent measurements stand in
 for the one I had not taken.
+
+### 2026-09-16 - ab256f5
+**A guest's address now works.** Until today a guest was shown the shared address
+and told, in the panel and in the README, that mail sent to it was deliberately
+dropped. That was an honest description of a product that could not attribute one
+shared address to one of many visitors, and it left the front door openable but not
+usable: the loop the whole thesis rests on could not be run by the person most
+likely to arrive, who is the one who presses the guest button. The sign-in screen
+had been promising "its own ledger, its own address, its own claims" the whole
+time, so the copy and the product disagreed, and the copy was the aspirational one.
+
+**The measurement that made it fixable.** The provider delivers a plus-addressed
+message to the shared inbox while keeping the tag in the envelope. Sent from a
+second inbox to `owed+probe@agentmail.to`, the message arrived in
+`owed@agentmail.to` carrying `inbox_id: "owed@agentmail.to"` and
+`to: ["owed+probe@agentmail.to"]`. Both fields, in one object, read off the live
+API. `onMessageReceived` already reads `to` first and looks it up in `inboxes`, so
+the whole change is one row per guest. **The inbound router is not modified**, and
+that is the reason to believe it works: the code that routes mail is code that
+already routes mail.
+
+Two earlier attempts had suggested the opposite and both were weak tests. Sending
+from the inbox to its own plus address produced only an outbound record, because
+mail systems treat self-delivery specially. The documentation never mentions
+plus-addressing at all. A negative result from a test that cannot work is not
+evidence, and I had been treating it as if it were.
+
+**What it removes.** Nothing is provisioned for a guest, so the three-inbox
+allowance stops being a cap on how many people can use this. The ceiling still
+binds at the third real account, which is now a smaller claim than it was: the
+default visitor no longer touches it. The alias token is random rather than derived
+from the user id, because the address is the only thing deciding whose ledger an
+arriving message lands in, and it is handed to the guest to give out.
+
+`mine` now reads the row instead of branching on whether the user has an email,
+which removes the second place that had to know what a guest is. `store` patches
+rather than assuming there is no row, because `onMessageReceived` reads `by_user`
+with `.unique()` and a second row for one person would throw rather than misbehave
+quietly.
+
+**Verified twice, differently.** Fifteen assertions on the local backend, and the
+one that matters is a control: a message addressed to one guest's alias left the
+other guest's ledger empty, through the same code path and the same payload. An
+unknown alias and the bare shared address both route nowhere. A provisioned inbox
+still routes, so the real-account path did not regress. Then the ledger was
+rendered through the real components with the real seeded rows, because a guest's
+address is now 28 characters where it was 16, and a wider string in a fixed panel
+is exactly the kind of thing assertions do not catch. It fits on one line, with no
+horizontal overflow.
+
+**Two limits of the local environment, stated rather than implied.** The
+self-hosted deployment has no auth signing keys, so the guest button could not be
+pressed against it and the render used fixtures for the Convex layer rather than
+the live backend. And those keys cannot be generated here at all: the sandbox
+terminates any attempt to read private key material as text, by node or by `cat`,
+while `openssl` runs. So deployment step 7, `npx @convex-dev/auth`, is unverified by
+me and has to be run on a machine that is not sandboxed.
