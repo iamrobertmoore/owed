@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-15T17:01:13Z
-- **Last updated:** 2026-09-16T11:47:00Z
+- **Last updated:** 2026-09-16T13:45:00Z
 
 ## Log
 
@@ -104,3 +104,44 @@ earlier session had left in the dev database, so the checks were scoped to the
 seeded guest. Rendering the ledger and the slug deep link through the real
 components then caught a copy bug the assertions could not, where the paper
 trail claimed "all from real mail" over records that come from the example.
+
+### 2026-09-16 - 4b1d8ee
+
+A real account can now load the worked example, which makes the product
+recordable as well as legible. A guest shares one address and has no inbound
+routing, so the panel showing the agent's address could not be shown honestly
+and a reply could not arrive at all. A real account has both, and had nothing
+to look at until somebody forwarded an email and waited weeks.
+
+The seed guard moved rather than disappeared. `seedForUser` no longer refuses a
+user with an email, because seeding the content and deciding who may ask for it
+are different questions, and holding both in one function is what made the
+first one untestable without a session. `seedExample` stays guest-only, so it
+remains the only path that runs without being asked and content still cannot
+appear in a real ledger uninvited. `loadExample` is the deliberate path. Both
+obey the rule that matters: the example lands only on an empty ledger, so it can
+never sit beside a claim the owner did not create (`convex/example.ts`).
+
+The totals block now names the example when the figures cover it. Those figures
+are honest arithmetic over whatever is in the ledger, which is exactly why a
+block reading "Recovered GBP 349" has to say when part of that is
+reconstructed. A headline number is the easiest thing on the page to read as a
+claim about the reader, and this product's argument is that nothing here
+overclaims (`src/App.tsx`, `src/index.css`).
+
+Verified with 60 assertions against the self-hosted backend: both guards, each
+of the four slugs, the money, the stages, the timelines, and a control proving
+the send guard fires on the demo branch rather than returning early for some
+other reason. Two first-pass failures were the harness and not the code. A
+Convex `first()` returns null rather than undefined, so an `=== undefined`
+assertion was false whether or not a row existed and could never have passed.
+An expected stage map was written in a different key order to the actual one,
+so identical content compared unequal. Both are the same mistake in different
+clothes, and it is the one this project keeps making: an assertion that cannot
+fail for the reason it claims.
+
+Rendering then checked what assertions cannot. The empty state, the invite and
+the loaded ledger were built through the real components against fixtures and
+looked at. The button was pressed and the ledger filled while the address stayed
+the account's own, which is the property the recording depends on. The harness
+touched no source file and was deleted afterwards.
