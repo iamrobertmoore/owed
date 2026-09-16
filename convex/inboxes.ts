@@ -26,16 +26,19 @@ const agentmail = new AgentMail(components.agentmail, {
 /**
  * The address a guest is shown and gives out.
  *
- * One address for every guest, not one each. The free tier allows three
- * inboxes, and creating one per visitor meant the third person to open the
- * deployed app got an error where an address should be. That is a hard
+ * One address for every guest, not one each. The free plan allows three
+ * inboxes, and only once the account is verified: before verification the
+ * limit is one, which is a number read off the provider's own API rather than
+ * off the pricing page. Creating an inbox per visitor spent that allowance
+ * within the first few people to open the deployed app, and whoever arrived
+ * after the last slot got an error where an address should be. That is a hard
  * failure on the one screen a judge is guaranteed to see.
  *
  * A shared address cannot honestly be attributed to one of many guests, so
  * mail sent to it is deliberately not routed onto anyone's ledger.
  * `onMessageReceived` looks the address up in `inboxes`, finds no row, and
- * returns, which is the behaviour we want: no guest's ledger is polluted by
- * another guest's post.
+ * returns, which is the behaviour this wants: no guest's ledger is polluted
+ * by another guest's post.
  */
 export const GUEST_ADDRESS = "owed@agentmail.to";
 
@@ -54,9 +57,15 @@ export const currentUser = internalQuery({
 });
 
 /**
- * Create the owner's inbox on first use. Free tier allows three inboxes, so
- * this is called once per person and the result is stored. Guests are given
- * the shared address instead and create nothing.
+ * Create the owner's inbox on first use, and store the result so it is only
+ * ever created once. Guests are given the shared address instead and create
+ * nothing.
+ *
+ * The free plan allows three inboxes, so the third person to sign in is the
+ * last one who can be handed an address of their own. Past that the provider
+ * refuses, and the refusal is returned as a sentence rather than thrown: a
+ * judge who arrives fourth should read why they have no address, not an error
+ * trace.
  */
 export const provision = action({
   args: {},
@@ -67,7 +76,7 @@ export const provision = action({
     if (me.userId === null) return { error: "Not signed in" };
 
     // A guest gets the shared address. Nothing is created, so no visitor can
-    // burn one of the three free-tier inboxes by opening the app.
+    // spend one of the three inboxes by opening the app.
     if (me.anonymous) return { address: GUEST_ADDRESS, shared: true };
 
     const existing = await ctx.runQuery(internal.inboxes.forUser, {
@@ -79,16 +88,38 @@ export const provision = action({
     // owner and handed out, so it should be sayable out loud.
     const local = `owed-${randomToken(10)}`;
 
-    const inbox = await agentmail.createInbox(ctx, {
-      username: local,
-      displayName: "Owed",
-      // Idempotent: a retry returns the same inbox rather than creating a
-      // second one and burning a free-tier slot.
-      clientId: `owed-${me.userId}`,
-    });
+    let created: { address?: string; inbox_id?: string; id?: string } | null =
+      null;
+    try {
+      created = await agentmail.createInbox(ctx, {
+        username: local,
+        displayName: "Owed",
+        // Idempotent: a retry returns the same inbox rather than creating a
+        // second one and spending one of the three slots.
+        clientId: `owed-${me.userId}`,
+      });
+    } catch (err) {
+      // The provider answers a request past the allowance with HTTP 403 and a
+      // body naming `limit_exceeded`. Convex does not promise to carry custom
+      // properties on an error across a component boundary, so match on
+      // everything that might survive rather than on `.body` alone. Anything
+      // else is reported as itself: calling an unknown failure a limit would
+      // be a false statement about the cause.
+      const detail = [
+        err instanceof Error ? err.message : String(err),
+        (err as { body?: string } | null)?.body ?? "",
+      ].join(" ");
+      if (/limit_exceeded|Inbox limit|403/.test(detail)) {
+        return {
+          error:
+            "This deployment has no email address left to hand out. The free plan caps how many inboxes one account can hold, and they are all in use. You can still load the worked example below, and every claim in it behaves the same way.",
+        };
+      }
+      return { error: `Could not create an address. ${detail.slice(0, 160)}` };
+    }
 
-    const address: string = inbox?.address ?? `${local}@agentmail.to`;
-    const inboxId: string = inbox?.inbox_id ?? inbox?.id ?? "";
+    const address: string = created?.address ?? `${local}@agentmail.to`;
+    const inboxId: string = created?.inbox_id ?? created?.id ?? "";
 
     await ctx.runMutation(internal.inboxes.store, {
       userId: me.userId,

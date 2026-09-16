@@ -243,7 +243,7 @@ function Ledger() {
     }
   }
 
-  // One address per person, created the first time they arrive. The free tier
+  // One address per person, created the first time they arrive. The plan
   // allows three, so this is guarded rather than called on every render.
   useEffect(() => {
     if (asked.current) return;
