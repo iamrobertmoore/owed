@@ -1,0 +1,173 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 800" width="1180" height="800" role="img" aria-labelledby="title desc">
+<title id="title">Owed: from a forwarded confirmation to money recovered</title>
+<desc id="desc">The owner forwards the paper trail to an address the agent holds. Convex records it, reads the counterparty's own published terms with Firecrawl, and finds an entitlement in the gap between the two. A letter is drafted citing the provision by reference, the owner approves it, it is sent from the agent's own address, and the reply is classified. Only a concession settles anything. A cron sweep escalates on silence and the ledger reports money actually recovered.</desc>
+
+<style>
+  .bg      { fill: #faf8f5; }
+  .panel   { fill: #f4f1ec; stroke: #e2ddd5; stroke-width: 1.5; }
+  .card    { fill: #ffffff; stroke: #e2ddd5; stroke-width: 1.5; }
+  .actor   { fill: #ffffff; stroke: #d8d2c8; stroke-width: 1.5; }
+  .edge    { stroke: #b3aca1; stroke-width: 1.6; fill: none; }
+  .edge-d  { stroke: #b3aca1; stroke-width: 1.6; fill: none; stroke-dasharray: 5 4; }
+  .arrow   { fill: #b3aca1; }
+  .pill    { fill: #ffffff; stroke: #e2ddd5; stroke-width: 1; }
+
+  .h1      { font: 700 27px Georgia, "Times New Roman", serif; fill: #101418; }
+  .h2      { font: 400 13.5px ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; fill: #6a727c; }
+  .sect    { font: 700 11px ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; fill: #8a929c; letter-spacing: 1.6px; }
+  .actor-t { font: 700 14px ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; fill: #101418; }
+  .actor-b { font: 400 11.5px ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; fill: #6a727c; }
+  .step-t  { font: 700 15px ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; fill: #101418; }
+  .step-b  { font: 400 11.5px ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; fill: #4d5560; }
+  .badge-n { font: 700 12px ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
+  .lbl     { font: 600 11.5px ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; fill: #4d5560; }
+  .foot-t  { font: 700 12px ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; fill: #101418; }
+  .foot-b  { font: 400 11.5px ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; fill: #6a727c; }
+</style>
+
+<rect class="bg" width="1180" height="800"/>
+
+<!-- head -->
+<text class="h1" x="40" y="44">Owed</text>
+<text class="h2" x="150" y="44">One address for the paper trail. The money it is owed comes back.</text>
+
+<!-- actors -->
+<rect class="actor" x="40" y="62" width="300" height="58" rx="12"/>
+<text class="actor-t" x="60" y="88">The owner</text>
+<text class="actor-b" x="60" y="106">Forwards order confirmations, bookings and renewals</text>
+
+<rect class="actor" x="840" y="62" width="300" height="58" rx="12"/>
+<text class="actor-t" x="860" y="88">The counterparty</text>
+<text class="actor-b" x="860" y="106">Publishes refunds, complaint routes and terms</text>
+
+<!-- panel -->
+<rect class="panel" x="40" y="140" width="1100" height="620" rx="18"/>
+<text class="sect" x="64" y="170">CONVEX</text>
+
+<!-- edges into the panel -->
+<path class="edge" d="M183 120 L183 196"/>
+<path class="arrow" d="M183 196 l-5 -9 l10 0 z"/>
+<rect class="pill" x="196" y="146" width="166" height="24" rx="12"/>
+<text class="lbl" x="208" y="162">forwards the paper trail</text>
+
+<path class="edge" d="M950 120 L950 164 L667 164 L667 196"/>
+<path class="arrow" d="M667 196 l-5 -9 l10 0 z"/>
+<rect class="pill" x="733" y="152" width="150" height="24" rx="12"/>
+<text class="lbl" x="745" y="168">their published terms</text>
+
+<!-- phase 1 -->
+<g>
+  <rect class="card" x="72" y="196" width="222" height="140" rx="14"/>
+  <rect x="88" y="212" width="22" height="22" rx="7" fill="#101418"/>
+  <text class="badge-n" x="94" y="227" fill="#ffffff">1</text>
+  <text class="step-t" x="120" y="228">Arrives</text>
+  <text class="step-b" x="88" y="256">The agent holds its own</text>
+  <text class="step-b" x="88" y="274">address. The owner forwards</text>
+  <text class="step-b" x="88" y="292">confirmations, bookings and</text>
+  <text class="step-b" x="88" y="310">renewal notices to it.</text>
+</g>
+<g>
+  <rect class="card" x="314" y="196" width="222" height="140" rx="14"/>
+  <rect x="330" y="212" width="22" height="22" rx="7" fill="#101418"/>
+  <text class="badge-n" x="336" y="227" fill="#ffffff">2</text>
+  <text class="step-t" x="362" y="228">Recorded</text>
+  <text class="step-b" x="330" y="256">Verified and deduplicated by</text>
+  <text class="step-b" x="330" y="274">event id. What was bought,</text>
+  <text class="step-b" x="330" y="292">from whom, and when it</text>
+  <text class="step-b" x="330" y="310">was due.</text>
+</g>
+<g>
+  <rect class="card" x="556" y="196" width="222" height="140" rx="14"/>
+  <rect x="572" y="212" width="22" height="22" rx="7" fill="#101418"/>
+  <text class="badge-n" x="578" y="227" fill="#ffffff">3</text>
+  <text class="step-t" x="604" y="228">Terms read</text>
+  <text class="step-b" x="572" y="256">Firecrawl maps the site and</text>
+  <text class="step-b" x="572" y="274">mines it for provisions kept</text>
+  <text class="step-b" x="572" y="292">verbatim, with the document's</text>
+  <text class="step-b" x="572" y="310">own reference.</text>
+</g>
+<g>
+  <rect class="card" x="798" y="196" width="222" height="140" rx="14"/>
+  <rect x="814" y="212" width="22" height="22" rx="7" fill="#101418"/>
+  <text class="badge-n" x="820" y="227" fill="#ffffff">4</text>
+  <text class="step-t" x="846" y="228">Claim found</text>
+  <text class="step-b" x="814" y="256">The gap between what was</text>
+  <text class="step-b" x="814" y="274">promised and what their</text>
+  <text class="step-b" x="814" y="292">terms commit them to. Cited</text>
+  <text class="step-b" x="814" y="310">from a clause, not invented.</text>
+</g>
+
+<path class="edge" d="M294 266 L314 266"/><path class="arrow" d="M314 266 l-9 -5 l0 10 z"/>
+<path class="edge" d="M536 266 L556 266"/><path class="arrow" d="M556 266 l-9 -5 l0 10 z"/>
+<path class="edge" d="M778 266 L798 266"/><path class="arrow" d="M798 266 l-9 -5 l0 10 z"/>
+
+<!-- the wrap -->
+<path class="edge-d" d="M909 336 L909 386 L183 386 L183 428"/>
+<path class="arrow" d="M183 428 l-5 -9 l10 0 z"/>
+<rect class="pill" x="470" y="374" width="152" height="24" rx="12"/>
+<text class="lbl" x="482" y="390">a claim worth pursuing</text>
+
+<!-- phase 2 -->
+<g>
+  <rect class="card" x="72" y="428" width="222" height="140" rx="14"/>
+  <rect x="88" y="444" width="22" height="22" rx="7" fill="#101418"/>
+  <text class="badge-n" x="94" y="459" fill="#ffffff">5</text>
+  <text class="step-t" x="120" y="460">Drafted</text>
+  <text class="step-b" x="88" y="488">Quotes the provision by its</text>
+  <text class="step-b" x="88" y="506">reference, states one remedy</text>
+  <text class="step-b" x="88" y="524">and one deadline, and answers</text>
+  <text class="step-b" x="88" y="542">the exclusion pre-emptively.</text>
+</g>
+<g>
+  <rect class="card" x="314" y="428" width="222" height="140" rx="14"/>
+  <rect x="330" y="444" width="22" height="22" rx="7" fill="#b5761f"/>
+  <text class="badge-n" x="336" y="459" fill="#ffffff">6</text>
+  <text class="step-t" x="362" y="460">You approve</text>
+  <text class="step-b" x="330" y="488">You read it and press send.</text>
+  <text class="step-b" x="330" y="506">Nothing leaves the outbox</text>
+  <text class="step-b" x="330" y="524">without this. The agent</text>
+  <text class="step-b" x="330" y="542">writes; you decide.</text>
+</g>
+<g>
+  <rect class="card" x="556" y="428" width="222" height="140" rx="14"/>
+  <rect x="572" y="444" width="22" height="22" rx="7" fill="#101418"/>
+  <text class="badge-n" x="578" y="459" fill="#ffffff">7</text>
+  <text class="step-t" x="604" y="460">Sent</text>
+  <text class="step-b" x="572" y="488">From the agent's own address,</text>
+  <text class="step-b" x="572" y="506">labelled with the claim. Then it</text>
+  <text class="step-b" x="572" y="524">waits on the company's own</text>
+  <text class="step-b" x="572" y="542">published response window.</text>
+</g>
+<g>
+  <rect class="card" x="798" y="428" width="222" height="140" rx="14"/>
+  <rect x="814" y="444" width="22" height="22" rx="7" fill="#0e7c5a"/>
+  <text class="badge-n" x="820" y="459" fill="#ffffff">8</text>
+  <text class="step-t" x="846" y="460">Settled</text>
+  <text class="step-b" x="814" y="488">Read for what it commits to.</text>
+  <text class="step-b" x="814" y="506">Only a concession settles.</text>
+  <text class="step-b" x="814" y="524">Silence moves the claim up</text>
+  <text class="step-b" x="814" y="542">the ladder instead.</text>
+</g>
+
+<path class="edge" d="M294 498 L314 498"/><path class="arrow" d="M314 498 l-9 -5 l0 10 z"/>
+<path class="edge" d="M536 498 L556 498"/><path class="arrow" d="M556 498 l-9 -5 l0 10 z"/>
+<path class="edge" d="M778 498 L798 498"/><path class="arrow" d="M798 498 l-9 -5 l0 10 z"/>
+
+<!-- the letter out, and the reply back -->
+<path class="edge" d="M667 568 L667 580 L1044 580 L1044 120"/>
+<path class="arrow" d="M1044 120 l-5 9 l10 0 z"/>
+<rect class="pill" x="786" y="568" width="140" height="24" rx="12"/>
+<text class="lbl" x="798" y="584">the letter goes out</text>
+
+<path class="edge-d" d="M1120 120 L1120 600 L909 600 L909 568"/>
+<path class="arrow" d="M909 568 l-5 9 l10 0 z"/>
+<rect class="pill" x="966" y="588" width="96" height="24" rx="12"/>
+<text class="lbl" x="978" y="604">their reply</text>
+
+<!-- footer -->
+<rect class="card" x="72" y="640" width="1036" height="108" rx="14"/>
+<text class="foot-t" x="96" y="666">On Convex. Everything above runs here, and there is no server of mine to keep alive.</text>
+<text class="foot-b" x="96" y="690">A schema of nine tables and twenty indexes. A 1024-dimension vector index over the provisions, filtered by counterparty.</text>
+<text class="foot-b" x="96" y="712">Queries, mutations and actions. An HTTP action for the signed webhook. A thirty-minute cron sweep. Scheduled functions for the next step.</text>
+<text class="foot-b" x="96" y="734">File storage for evidence. Convex Auth. Components: AgentMail for the address, Firecrawl for the terms, static hosting for this page.</text>
+</svg>

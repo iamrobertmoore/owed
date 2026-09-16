@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Owed app icon">
+  <title>Owed</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#181D23"/>
+      <stop offset="1" stop-color="#0C0F13"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <path d="M160 96h192a16 16 0 0 1 16 16v276l-28-20.8-28 20.8-28-20.8-28 20.8-28-20.8-28 20.8-28-20.8-28 20.8V112a16 16 0 0 1 16-16Z" fill="#FAF8F5"/>
+  <rect x="200" y="168" width="112" height="24" rx="12" fill="#101418" opacity="0.5"/>
+  <rect x="200" y="224" width="72" height="24" rx="12" fill="#101418" opacity="0.5"/>
+  <rect x="200" y="288" width="112" height="32" rx="16" fill="#0E7C5A"/>
+  <rect x="200" y="340" width="112" height="12" rx="6" fill="#0E7C5A"/>
+</svg>
