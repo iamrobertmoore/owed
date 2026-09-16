@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Your agent has its own email address. Everything you are owed arrives there, and it goes and gets it.",
+  "description": "Your agent holds the paper trail, so it finds what you are owed instead of waiting to be told.",
   "scripts": {
     "dev": "concurrently -n convex,web -c magenta,cyan \"convex dev\" \"vite\"",
     "dev:web": "vite",

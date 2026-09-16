@@ -235,6 +235,29 @@ export type SpendSummary = {
   note: string;
 };
 
+/**
+ * Resolve a worked example slug against the caller's own ledger.
+ *
+ * The README links to `#claim=demo-found`. A Convex id belongs to whoever
+ * created the row, so a link built from one is dead for every other visitor,
+ * which is every judge. The slug is stable and portable, and this turns it
+ * into the visitor's own copy of the example.
+ */
+export const byDemoKey = query({
+  args: { demoKey: v.string() },
+  handler: async (ctx, args): Promise<Id<"claims"> | null> => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) return null;
+    const claim = await ctx.db
+      .query("claims")
+      .withIndex("by_user_and_demo_key", (q) =>
+        q.eq("userId", userId).eq("demoKey", args.demoKey),
+      )
+      .first();
+    return claim?._id ?? null;
+  },
+});
+
 /** The ledger: everything held, with its stage and its money. */
 export const ledger = query({
   args: {},

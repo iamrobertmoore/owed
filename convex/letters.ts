@@ -176,6 +176,35 @@ export const approve = mutation({
     if (claim.stage !== "awaiting_approval") {
       throw new Error(`Claim is ${claim.stage}, not awaiting approval`);
     }
+
+    // The worked example must never put mail on the wire. A judge pressing
+    // send on a demo row gets the rest of the interaction and a timeline that
+    // says plainly that nothing was transmitted. The alternative was worse
+    // both ways: a real email to a fictional counterparty, or a button that
+    // errors on the one screen showing what makes this product different.
+    if (claim.demoKey) {
+      const now = Date.now();
+      await ctx.db.insert("events", {
+        claimId: args.claimId,
+        at: now,
+        kind: "approved",
+        detail: "Approved by the owner.",
+      });
+      await ctx.db.patch(args.claimId, {
+        stage: "sent",
+        updatedAt: now,
+        nextActionAt: now + 14 * 86_400_000,
+      });
+      await ctx.db.insert("events", {
+        claimId: args.claimId,
+        at: now,
+        kind: "sent",
+        detail:
+          "This is the worked example, so no letter was actually transmitted. On a real claim the letter would have left the agent's address at this point.",
+      });
+      return { queued: false };
+    }
+
     await ctx.db.insert("events", {
       claimId: args.claimId,
       at: Date.now(),
@@ -198,6 +227,15 @@ export const send = internalMutation({
   handler: async (ctx, args): Promise<{ sent: boolean; reason?: string }> => {
     const claim = await ctx.db.get(args.claimId);
     if (!claim) throw new Error(`No claim ${args.claimId}`);
+
+    // Belt and braces. `approve` already refuses a demo row, but this is the
+    // only function in the product that can put mail on the wire, and it
+    // should not be able to transmit the worked example even if a later
+    // caller forgets the guard above it.
+    if (claim.demoKey) {
+      return { sent: false, reason: "Worked example, so nothing is transmitted" };
+    }
+
     if (claim.stage !== "awaiting_approval") {
       return { sent: false, reason: `Claim is ${claim.stage}` };
     }

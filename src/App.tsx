@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useAction, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useConvexAuth } from "convex/react";
 import type { Id } from "../convex/_generated/dataModel";
@@ -154,11 +154,22 @@ function SignIn() {
 
 /**
  * A claim can be linked to directly, so a case can be handed to someone as a
- * URL rather than described. `#claim=<id>` opens that claim's sheet.
+ * URL rather than described.
+ *
+ * `#claim=<id>` opens a claim in this ledger. `#claim=demo-found` opens the
+ * worked example. The slug form is the one that matters for a link in a
+ * README: a Convex id belongs to whoever created the row, so an id in a link
+ * is dead for everybody else, while a slug resolves against whoever is
+ * looking.
  */
-function claimIdFromHash(): Id<"claims"> | null {
-  const match = window.location.hash.match(/claim=([A-Za-z0-9]+)/);
-  return match ? (match[1] as Id<"claims">) : null;
+function claimKeyFromHash(): string | null {
+  const match = window.location.hash.match(/claim=([A-Za-z0-9_-]+)/);
+  return match ? match[1] : null;
+}
+
+/** Convex ids are lowercase alphanumeric. A slug carries a hyphen. */
+function looksLikeClaimId(key: string): boolean {
+  return /^[a-z0-9]{20,}$/.test(key);
 }
 
 function Ledger() {
@@ -168,14 +179,28 @@ function Ledger() {
   const spend = useQuery(api.claims.spend);
   const inbox = useQuery(api.inboxes.mine);
   const provision = useAction(api.inboxes.provision);
-  const [selected, setSelected] = useState<Id<"claims"> | null>(() => claimIdFromHash());
+  const seedExample = useMutation(api.example.seedExample);
+
+  const [hashKey, setHashKey] = useState<string | null>(() => claimKeyFromHash());
   const [addressError, setAddressError] = useState<string | null>(null);
   const asked = useRef(false);
+  const seeded = useRef(false);
+
+  // A slug is resolved against this visitor's own copy of the worked example.
+  const slug = hashKey !== null && !looksLikeClaimId(hashKey) ? hashKey : null;
+  const resolvedDemo = useQuery(api.claims.byDemoKey, slug ? { demoKey: slug } : "skip");
+
+  const selected: Id<"claims"> | null =
+    hashKey === null
+      ? null
+      : looksLikeClaimId(hashKey)
+        ? (hashKey as Id<"claims">)
+        : resolvedDemo ?? null;
 
   // The URL is the source of truth for which sheet is open, so the back button
   // and a pasted link both behave.
   useEffect(() => {
-    const onHash = () => setSelected(claimIdFromHash());
+    const onHash = () => setHashKey(claimKeyFromHash());
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
@@ -188,7 +213,7 @@ function Ledger() {
     // replaceState rather than assigning: closing should not add a history
     // entry that reopens the sheet when someone presses back.
     window.history.replaceState(null, "", window.location.pathname);
-    setSelected(null);
+    setHashKey(null);
   }
 
   // One address per person, created the first time they arrive. The free tier
@@ -206,7 +231,22 @@ function Ledger() {
       );
   }, [inbox, provision]);
 
+  // A guest arrives to an empty ledger, because every claim is scoped to its
+  // owner. Seed the worked example so there is something to look at. The
+  // server refuses unless this is a guest with nothing in the ledger, so
+  // calling it is safe, idempotent, and costs nothing.
+  useEffect(() => {
+    if (seeded.current) return;
+    if (!ledger) return;
+    if (ledger.claims.length > 0) return;
+    seeded.current = true;
+    void seedExample({});
+  }, [ledger, seedExample]);
+
   const totals = ledger?.totals;
+  // A guest's ledger is the seeded worked example. The UI has to be able to
+  // tell, so it can label provenance rather than assert it.
+  const isExample = (ledger?.claims ?? []).some((c) => c.demoKey !== undefined);
 
   return (
     <div className="shell">
@@ -249,7 +289,7 @@ function Ledger() {
         </div>
       </div>
 
-      <AddressPanel address={inbox?.address} error={addressError} />
+      <AddressPanel address={inbox?.address} shared={inbox?.shared} error={addressError} />
 
       <section>
         <div className="section-head">
@@ -288,7 +328,10 @@ function Ledger() {
                     className={`dot ${recovered ? "recovered" : closed ? "quiet" : ""}`}
                   />
                   <span>
-                    <span className="title">{claim.title}</span>
+                    <span className="title">
+                      {claim.title}
+                      {claim.demoKey ? <span className="chip">worked example</span> : null}
+                    </span>
                     <span className="meta">
                       <span>{claim.counterpartyName}</span>
                       <span>·</span>
@@ -324,7 +367,14 @@ function Ledger() {
           <div className="section-head">
             <h2>Paper trail</h2>
             <span className="count">
-              {records.length} record{records.length === 1 ? "" : "s"}, all from real mail
+              {records.length} record{records.length === 1 ? "" : "s"}
+              {/*
+                "all from real mail" is true for a real account and false for
+                the worked example, so it cannot be unconditional. Claiming a
+                provenance the data does not have is the exact failure this
+                product exists to catch.
+              */}
+              {isExample ? ", from the worked example" : ", all from real mail"}
             </span>
           </div>
           <div className="rows">
@@ -373,7 +423,15 @@ function Ledger() {
 
 /* --------------------------------------------------------------- address -- */
 
-function AddressPanel({ address, error }: { address?: string; error: string | null }) {
+function AddressPanel({
+  address,
+  shared,
+  error,
+}: {
+  address?: string;
+  shared?: boolean;
+  error: string | null;
+}) {
   const [copied, setCopied] = useState(false);
 
   async function copy() {
@@ -391,7 +449,7 @@ function AddressPanel({ address, error }: { address?: string; error: string | nu
   return (
     <div className="address">
       <div>
-        <div className="label">Your agent's address</div>
+        <div className="label">{shared ? "Example address" : "Your agent's address"}</div>
         <div className="value">
           {address ?? (error ? "Could not open an address" : "Opening one...")}
         </div>
@@ -400,7 +458,9 @@ function AddressPanel({ address, error }: { address?: string; error: string | nu
         <div className="hint">
           {error
             ? error
-            : "Give this out instead of your own address. The agent reads what arrives, and nothing else."}
+            : shared
+              ? "This is the shared example address, shown so the panel is real and can be copied. Mail sent to it is not routed onto your ledger, because one address shared by every visitor cannot honestly be attributed to one of them. A real account gets its own."
+              : "Give this out instead of your own address. The agent reads what arrives, and nothing else."}
         </div>
         <button className="act ghost" onClick={copy} disabled={!address} type="button">
           {copied ? "Copied" : "Copy"}

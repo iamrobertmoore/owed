@@ -178,11 +178,20 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
     settledAt: v.optional(v.number()),
+    /**
+     * Set only on the worked example that a guest's ledger is seeded with.
+     *
+     * The slug is what makes `#claim=demo-found` resolve for any visitor. A
+     * Convex id is owned by the person who created the row, so a link built
+     * from one is dead for everybody else. A slug is stable and portable.
+     */
+    demoKey: v.optional(v.string()),
   })
     .index("by_user", ["userId"])
     .index("by_user_and_stage", ["userId", "stage"])
     .index("by_next_action", ["nextActionAt"])
-    .index("by_counterparty", ["counterpartyId"]),
+    .index("by_counterparty", ["counterpartyId"])
+    .index("by_user_and_demo_key", ["userId", "demoKey"]),
 
   /**
    * Every email in and out. A message can arrive before it belongs to a claim:
@@ -192,7 +201,13 @@ export default defineSchema({
   messages: defineTable({
     userId: v.id("users"),
     claimId: v.optional(v.id("claims")),
-    inboxId: v.id("inboxes"),
+    /**
+     * The address it arrived at, or left from. Optional because the worked
+     * example is reconstructed content rather than a delivery: it has no
+     * inbox row to point at, and inventing one would put an address in the
+     * table that no mail could ever reach.
+     */
+    inboxId: v.optional(v.id("inboxes")),
     direction: v.union(v.literal("inbound"), v.literal("outbound")),
     fromAddress: v.string(),
     toAddress: v.string(),

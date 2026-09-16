@@ -335,6 +335,25 @@ body::before {
   color: var(--recovered);
 }
 
+/*
+  The worked example chip. Quiet by design: it exists so nobody mistakes
+  seeded content for their own ledger, not to draw the eye.
+*/
+.chip {
+  display: inline-block;
+  vertical-align: 2px;
+  margin-left: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(16, 20, 24, 0.04);
+  color: var(--faint);
+}
+
 /* ------------------------------------------------------------- the sheet -- */
 
 .sheet-backdrop {

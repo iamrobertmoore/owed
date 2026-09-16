@@ -4,7 +4,9 @@
  */
 
 export function money(amount: number | null | undefined, currency = "GBP"): string {
-  if (amount === null || amount === undefined || !Number.isFinite(amount)) return "—";
+  // An en dash, not an em dash. The house style keeps em dashes out of anything
+  // a reader sees, and a placeholder glyph is still read.
+  if (amount === null || amount === undefined || !Number.isFinite(amount)) return "–";
   try {
     return new Intl.NumberFormat("en-GB", {
       style: "currency",
