@@ -2,9 +2,9 @@
 
 - **Project:** Owed
 - **Event:** Convex All Gas Hackathon
-- **What it does:** An agent with its own email address that holds a person's paper trail, finds what they are owed against the counterparty's own published terms, and pursues it.
+- **What it does:** An agent that holds a person's paper trail, finds what they are owed against the counterparty's own published terms, and pursues it.
 - **Live app:** not deployed
-- **Repo:** none
+- **Repo:** private
 - **Frontend:** Convex static hosting
 - **Convex deployment:** not deployed
 - **Components:** @agentmail/convex, @firecrawl/firecrawl-convex, @convex-dev/static-hosting, @convex-dev/auth
@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-15T17:01:13Z
-- **Last updated:** 2026-09-15T18:31:02Z
+- **Last updated:** 2026-09-16T11:47:00Z
 
 ## Log
 
@@ -65,3 +65,42 @@ classified, settled.
 
 Two rules the code enforces rather than describes: the sweep never sends, only
 drafts, and a claim is only ever settled by a `concession`.
+
+### 2026-09-16 - aaad7c2
+
+Found a defect that only appears on the judged URL. Every read is scoped to the
+user who owns the row, and the anonymous provider mints a fresh user on each
+arrival, so a visitor pressing "Continue as a guest" got an empty ledger and the
+three claim links in the README resolved to nothing. The worse half was the
+address: `inboxes.provision` called `agentmail.createInbox` once per person, the
+free tier allows three inboxes, and one was already taken, so the third visitor
+got an error where an address should be (`convex/inboxes.ts`).
+
+Guests now share one address and create nothing, and their ledger arrives seeded
+with a four-case worked example. The claims carry a stable slug (`demoKey`) so
+`#claim=demo-found` resolves against whoever is looking, which a Convex id can
+never do. Four cases: one found from a forwarded confirmation and settled in
+writing, one where an apology with no decision behind it is read as an
+acknowledgement and the claim stays open, one that escalated on silence, and one
+sitting at the approval gate with a letter drafted (`convex/example.ts`,
+`convex/claims.ts`, `src/App.tsx`).
+
+The example is marked rather than disguised. Every row carries a worked example
+chip, the counterparties are fictional businesses on `.example` domains that RFC
+2606 reserves so they can never resolve, and the letters are never transmitted:
+`approve` advances a demo row and writes to its timeline that nothing left the
+address, with a second guard in `send`, which is the only function in the
+product that can put mail on the wire (`convex/letters.ts`).
+
+Also made `messages.inboxId` optional. The example is reconstructed content
+rather than a delivery, and inventing an inbox row to satisfy the reference
+would have put an address in the table that no mail could reach
+(`convex/schema.ts`).
+
+Verified on the self-hosted backend with 26 assertions covering both guards, the
+slug index, the money, the stages and the timelines. Two first-pass failures
+were the test's fault and not the seed's: a global `collect()` counted rows an
+earlier session had left in the dev database, so the checks were scoped to the
+seeded guest. Rendering the ledger and the slug deep link through the real
+components then caught a copy bug the assertions could not, where the paper
+trail claimed "all from real mail" over records that come from the example.
