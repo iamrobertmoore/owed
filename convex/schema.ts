@@ -162,6 +162,17 @@ export default defineSchema({
     occurredAt: v.number(),
     /** Where the record came from, so a judge can see it is not invented. */
     sourceMessageId: v.optional(v.id("messages")),
+    /**
+     * Set on the worked example's rows only, the same way `claims` and
+     * `messages` mark theirs.
+     *
+     * Without it the ledger cannot tell a seeded record from one that came out
+     * of a real delivery. The records count at the top of the page reads "from
+     * the worked example", and it was reading that over a ledger holding a real
+     * order. The headline figure is honest arithmetic over whatever is in the
+     * ledger, so the one thing it must not do is misdescribe what is in it.
+     */
+    demoKey: v.optional(v.string()),
   })
     .index("by_user", ["userId"])
     .index("by_counterparty", ["counterpartyId"])

@@ -173,14 +173,24 @@ function looksLikeClaimId(key: string): boolean {
 }
 
 /**
- * A raw `From` header reads `Name <address@host>`. The address is the part
- * that says where the message actually came from, so that is the part worth
- * showing: a message arriving from a mail provider nobody has heard of is the
- * evidence that the round trip is real rather than staged.
+ * What to call the sender of an arrival.
+ *
+ * A raw `From` header reads `Name <address@host>` and carries both. The address
+ * is the stronger evidence that the message really came from where it claims,
+ * which is why this row exists, but it is also the part that is somebody's
+ * personal mailbox. This list is on screen in the video and in any judge's
+ * session, so the display name is shown when the header has one and the address
+ * only when it does not. A company writing from `billing@...` has no display
+ * name and still shows in full, which is the case the evidence was for.
  */
 function senderOf(from: string): string {
-  const angled = from.match(/<([^>]+)>/);
-  return (angled ? angled[1] : from).trim();
+  const angled = from.match(/^\s*"?([^"<]*?)"?\s*<([^>]+)>\s*$/);
+  if (angled) {
+    const name = angled[1].trim();
+    if (name) return name;
+    return angled[2].trim();
+  }
+  return from.trim();
 }
 
 function Ledger() {
@@ -290,9 +300,37 @@ function Ledger() {
   // silently mixes the two is exactly the overclaim this product exists to
   // catch.
   const claims = ledger?.claims ?? [];
-  const exampleCount = claims.filter((c) => c.demoKey !== undefined).length;
-  const isExample = exampleCount > 0;
-  const allExample = isExample && exampleCount === claims.length;
+  const claimRows = claims.length;
+  const recordRows = records?.length ?? 0;
+  const arrivalRows = arrivals?.length ?? 0;
+
+  const exampleClaims = claims.filter((c) => c.demoKey !== undefined).length;
+  const exampleRecords = (records ?? []).filter((r) => r.demoKey !== undefined).length;
+  const exampleArrivals = (arrivals ?? []).filter((m) => m.fromExample).length;
+
+  const isExample = exampleClaims > 0 || exampleRecords > 0 || exampleArrivals > 0;
+
+  /*
+    All-example is computed over the claims, the records and the arrivals, not
+    over the claims alone.
+
+    A real account that loads the worked example holds the example's four claims
+    beside its own real order, and counting only claims made the page announce
+    "these figures are the worked example" over a ledger containing real paper,
+    and label the real order as example. That is the same overclaim in the
+    opposite direction, and it is the state the recording session is in after
+    the example is loaded. Every surface has to have loaded before this can be
+    true, so a query still in flight cannot make the ledger look all-example for
+    a frame.
+  */
+  const allExample =
+    isExample &&
+    ledger !== undefined &&
+    records !== undefined &&
+    arrivals !== undefined &&
+    exampleClaims === claimRows &&
+    exampleRecords === recordRows &&
+    exampleArrivals === arrivalRows;
 
   return (
     <div className="shell">
@@ -549,11 +587,12 @@ function Ledger() {
               {records.length} record{records.length === 1 ? "" : "s"}
               {/*
                 "all from real mail" is true for a real account and false for
-                the worked example, so it cannot be unconditional. Claiming a
-                provenance the data does not have is the exact failure this
-                product exists to catch.
+                the worked example, so it cannot be unconditional, and it is
+                about the records on screen rather than about the page: a ledger
+                can hold the example's claims and a real order at once, and the
+                real order must not be described as reconstructed.
               */}
-              {isExample ? ", from the worked example" : ", all from real mail"}
+              {exampleRecords === recordRows ? ", from the worked example" : ", all from real mail"}
             </span>
           </div>
           <div className="rows">
@@ -562,6 +601,7 @@ function Ledger() {
                 <span className="dot quiet" />
                 <span>
                   <span className="title">{record.description}</span>
+                  {record.demoKey ? <span className="chip">worked example</span> : null}
                   <span className="meta">
                     <span>{kindLabel(record.kind)}</span>
                     <span>·</span>

@@ -124,6 +124,31 @@ type DemoCase = {
     /** Days before now that it arrived. */
     daysAgo: number;
   };
+  /**
+   * The second arrival: the piece of paper that states what went wrong.
+   *
+   * `detect` reads the record and the counterparty's provisions and nothing
+   * else, and it is instructed not to invent facts. So a case whose only paper
+   * is a confirmation cannot support a claim about damage, a deposit that was
+   * not returned, or a cancelled service: the record would be asserting
+   * something no arrival ever said, and a visitor who reads the arrival and
+   * then the sheet has no way to answer "how did it know that?".
+   *
+   * This is the message that carries the condition, and it is the kind of post
+   * that arrives on its own: a damage report, a cancellation notice, a note
+   * that a deposit is still held. The owner forwards paper; the owner does not
+   * open a case. Omitted where the first arrival already carries the condition,
+   * which is the price-change notice.
+   */
+  condition?: {
+    fromAddress: string;
+    subject: string;
+    text: string;
+    /** What the reader decided, in its own words. */
+    reason: string;
+    /** Days before now that it arrived. */
+    daysAgo: number;
+  };
   events: { kind: "detected" | "policy_read" | "drafted" | "approved" | "sent" | "replied" | "classified" | "escalated" | "settled" | "exhausted" | "note"; detail: string; daysAgo: number }[];
 };
 
@@ -171,6 +196,25 @@ Halden Optics`,
       reason:
         "An order confirmation stating what was bought, from whom, and for how much, so it is the paper a claim about the order would be argued from.",
     },
+    condition: {
+      fromAddress: "support@haldenoptics.example",
+      subject: "Re: Order HO-4482 arrived damaged",
+      daysAgo: 44,
+      text: `Hello,
+
+Thank you for the photographs. I have attached them to the order.
+
+Order HO-4482
+Item: 35mm f/1.8 lens
+Paid: £349.00
+Delivered: 12 August
+
+I can confirm the front element arrived cracked. I have logged it as damage in transit and passed it to our refunds team.
+
+Halden Optics`,
+      reason:
+        "A damage report on order HO-4482 confirming the lens arrived with a cracked front element, so it is the paper that shows the condition the returns policy asks about.",
+    },
     claim: {
       title: "Damaged lens, refund owed under their own returns policy",
       basis:
@@ -202,7 +246,7 @@ Robert`,
       },
     ],
     events: [
-      { kind: "detected", daysAgo: 43, detail: "Found from the paper trail: the order confirmation showed a lens delivered, and no refund followed." },
+      { kind: "detected", daysAgo: 43, detail: "Found from the paper trail: the damage report confirmed the front element arrived cracked, and the returns policy promises a full refund for goods that arrive damaged." },
       { kind: "policy_read", daysAgo: 43, detail: "Read Returns and refunds. Clause 4.2 supports the claim, so it was quoted by reference." },
       { kind: "drafted", daysAgo: 42, detail: "Drafted a first letter citing clause 4.2." },
       { kind: "approved", daysAgo: 42, detail: "Approved by the owner." },
@@ -250,6 +294,23 @@ Bramble Court Hotel`,
       reason:
         "A booking confirmation with a date, a rate and a stated deposit, so it is the paper a claim about the deposit would be argued from.",
     },
+    condition: {
+      fromAddress: "reservations@bramblecourt.example",
+      subject: "Re: Deposit on booking BC-9931",
+      daysAgo: 30,
+      text: `Hello,
+
+Booking BC-9931
+Two nights, room 214
+Deposit taken at check-in: £180.00
+Checked out: 3 August
+
+I have looked at the booking. The £180.00 deposit has not been returned to your card, and there is no charge recorded against the room. It is still with our finance team.
+
+Bramble Court Reservations`,
+      reason:
+        "A note on booking BC-9931 stating the deposit has not been returned and that nothing was charged against the room, so it is the paper that shows the condition the booking terms ask about.",
+    },
     claim: {
       title: "Deposit promised back in ten working days, still held",
       basis:
@@ -290,7 +351,7 @@ Front of House`,
       },
     ],
     events: [
-      { kind: "detected", daysAgo: 26, detail: "Found from the paper trail: the booking confirmation showed a deposit taken, and no refund followed." },
+      { kind: "detected", daysAgo: 26, detail: "Found from the paper trail: the hotel confirmed the deposit had not been returned and that nothing was charged against the room, and their terms promise it back within ten working days of checkout." },
       { kind: "policy_read", daysAgo: 26, detail: "Read Booking terms. Clause 6.1 supports the claim." },
       { kind: "drafted", daysAgo: 20, detail: "Drafted a first letter citing clause 6.1." },
       { kind: "approved", daysAgo: 20, detail: "Approved by the owner." },
@@ -346,6 +407,24 @@ Tessellate Rail`,
       reason:
         "A ticket confirmation stating a departure time, a booking reference and a price, so it is the paper a claim about the journey would be argued from.",
     },
+    condition: {
+      fromAddress: "service.updates@tessellaterail.example",
+      subject: "Service cancelled: 07:12, booking TR-2210",
+      daysAgo: 22,
+      text: `Hello,
+
+The 07:12 service on the booking below has been cancelled. No replacement has been arranged for that departure.
+
+Booking TR-2210
+Outward: 07:12, Saturday, advance single
+Total paid £128.40 GBP
+
+The next departure we can offer on the same route is at 09:40.
+
+Tessellate Rail`,
+      reason:
+        "A cancellation notice for booking TR-2210 stating that no replacement was offered and that the next departure was over two hours later, so it is the paper that shows the condition the conditions of carriage ask about.",
+    },
     claim: {
       title: "Cancelled service, refund owed without an administration fee",
       basis:
@@ -391,7 +470,7 @@ Robert`,
       },
     ],
     events: [
-      { kind: "detected", daysAgo: 21, detail: "Found from the paper trail: the ticket was booked and the service never ran, and no refund followed." },
+      { kind: "detected", daysAgo: 21, detail: "Found from the paper trail: the cancellation notice said the 07:12 had been cancelled with no replacement and the next departure was over two hours later, and the conditions of carriage promise a full refund for a cancelled service." },
       { kind: "policy_read", daysAgo: 21, detail: "Read Conditions of carriage. Clause 9.4 supports the claim and clause 9.5 is the exclusion they would rely on." },
       { kind: "drafted", daysAgo: 20, detail: "Drafted a first letter citing clause 9.4 and answering clause 9.5 before they raised it." },
       { kind: "approved", daysAgo: 20, detail: "Approved by the owner." },
@@ -617,6 +696,7 @@ export const seedForUser = internalMutation({
             ? now + demo.record.dueInDays * DAY
             : undefined,
         occurredAt: now - demo.record.daysAgo * DAY,
+        demoKey: demo.key,
       });
 
       /*
@@ -642,6 +722,33 @@ export const seedForUser = internalMutation({
         demoKey: demo.key,
         at: now - demo.paper.daysAgo * DAY,
       });
+
+      /*
+        The arrival that states the condition.
+
+        Same shape as the paper above and linked to the same record, because it
+        is the second piece of the same paper trail rather than a different
+        case. Without it the record asserts a fact no message carries, and the
+        detector is told not to invent facts, so the claim on the sheet could
+        not have come from the post shown beside it. Omitted for the case whose
+        first arrival already carries the condition.
+      */
+      if (demo.condition) {
+        await ctx.db.insert("messages", {
+          userId,
+          direction: "inbound",
+          fromAddress: demo.condition.fromAddress,
+          toAddress: GUEST_ADDRESS,
+          subject: demo.condition.subject,
+          text: demo.condition.text,
+          providerMessageId: `example-${userId}-${demo.key}-condition`,
+          ingestOutcome: "kept",
+          ingestReason: demo.condition.reason,
+          recordId,
+          demoKey: demo.key,
+          at: now - demo.condition.daysAgo * DAY,
+        });
+      }
 
       const claimId = await ctx.db.insert("claims", {
         userId,

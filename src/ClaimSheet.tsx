@@ -73,6 +73,15 @@ export function ClaimSheet({
           <>
             <div className="section-head">
               <span className="pill owed">{stageLabel(claim.stage)}</span>
+              {/*
+                The sheet is what every README link opens directly into, so it
+                is the one screen a visitor can reach without passing the ledger
+                and its note. It has to carry the label itself: a reconstructed
+                claim read on its own is indistinguishable from a real one, and
+                the difference is the whole basis on which a judge should read
+                the rest of the page.
+              */}
+              {claim.demoKey ? <span className="chip">worked example</span> : null}
               <button className="act ghost" onClick={onClose} type="button">
                 Close
               </button>
