@@ -586,13 +586,21 @@ function Ledger() {
             <span className="count">
               {records.length} record{records.length === 1 ? "" : "s"}
               {/*
-                "all from real mail" is true for a real account and false for
-                the worked example, so it cannot be unconditional, and it is
-                about the records on screen rather than about the page: a ledger
-                can hold the example's claims and a real order at once, and the
-                real order must not be described as reconstructed.
+                Three states, not two. A ledger can hold the example's records
+                and real paper at once, which is the state the recording session
+                is in, and a two-way branch told that ledger "all from real mail"
+                while four example rows sat on screen. Labelling from the rows
+                and asserting over all of them is the same overclaim in the
+                other direction. A count of zero gets no suffix at all, because
+                "0 records, all from real mail" is a sentence about nothing.
               */}
-              {exampleRecords === recordRows ? ", from the worked example" : ", all from real mail"}
+              {recordRows === 0
+                ? ""
+                : exampleRecords === recordRows
+                  ? ", from the worked example"
+                  : exampleRecords === 0
+                    ? ", all from real mail"
+                    : `, ${exampleRecords} of them from the worked example`}
             </span>
           </div>
           <div className="rows">
