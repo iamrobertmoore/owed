@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-16T07:50:55Z
-- **Last updated:** 2026-09-17T22:06:10Z
+- **Last updated:** 2026-09-17T22:12:36Z
 
 ## Log
 
@@ -712,3 +712,37 @@ hour TTL, and the live bundle answers 200 at 324,925 bytes with no occurrence of
 never cached at all, which is why the exposure was never real: the address lived in the map. The caution
 survives the correction, because the edge dropped that entry on its own timer rather than because
 anything asked it to.
+
+### 2026-09-17 - f25b2f2
+
+**Widening the sweep's scope found five survivors that the review's list did not name, and one of them
+was a shipped artefact.** The list named four sentences in three documents and one index count. With the
+notes directory in scope and the four strings in the spec, the sweep read 52 files instead of the eleven
+it was told about, and it turned up the index count in the architecture diagram, a fifth copy of the
+counterparty sentence in the deploy notes, and three claims in the two planning documents. All five were
+fixed rather than exempted.
+
+**The diagram was the one that shipped.** `docs/architecture.svg` said "nine tables and twenty indexes"
+in its footer. The README says nineteen, the schema has nineteen `.index(` calls, and the deploy notes
+said twenty. The diagram was in the sweep's `files` list the whole time and passed, because the file list
+decides which files are read and only the string list decides what is found in them. Adding the string is
+what caught it, not adding the file.
+
+**The deploy notes carried the counterparty sentence a second time.** The review named the video script's
+copy. The same claim, that the demo counterparty is a second address, was also in the prep section of the
+deploy notes, two paragraphs above a sentence saying a judge who checks the sender will find a `.example`
+domain. The two disagreed with each other in the same document.
+
+**Two planning documents claimed a capability the build does not have.** Both list Convex depth for the
+rubric and both named file storage, one for attachments and one for evidence. There are no `ctx.storage`
+calls in the product, which is what the first review's item 1 was about, so the claim had already been
+removed from everything that ships and left standing in the two documents nobody re-read. The `evidence`
+table exists and is keyed by claim; nothing writes to it, and the documents say that instead. The plan
+also still carried the rate claim, "£71.2 billion a year", which the survey does not support: the figure
+is a single measured period, and the plan now says so in the same words as everything else.
+
+**Six files are exempt now and the reason is the same for all of them.** The build log and the five
+review documents exist to quote the claims that were withdrawn, so between them they carry nearly every
+string on the list by construction: a report of a defect has to state the defect. Everything else that
+hit was fixed. Each of the eight new strings was reintroduced into an unlisted file in the scoped
+directory to prove the check fails when the claim is back, and all eight were named.
