@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-15T17:01:13Z
-- **Last updated:** 2026-09-17T14:03:55Z
+- **Last updated:** 2026-09-17T14:51:37Z
 
 ## Log
 
@@ -337,4 +337,27 @@ slug resolves against the caller's own seeded copy. The README also gained the
 sentence it had been missing: a signed-out visitor hits the sign-in screen before
 the ledger, so the deep links are described as the way in once you are in, rather
 than as the way in.
+
+**The inbound path is proven from an outside domain, which was the last unproven
+link.** A forwarded mail sent from an unrelated personal mail account to a guest's
+alias arrived, was verified by the component, was routed by the alias onto that
+guest's ledger and nobody else's, and was read four seconds later by
+`ingest-paper-trail` on `gpt-4o-mini` for 2,088 input tokens and 92 out. Read off
+the deployment rather than off the screen: one row in `messages` carrying the alias
+as its `to` address and the guest's own inbox row, and one row in `aiCache`
+carrying the verdict. The reader declined it, correctly and in a sentence, because
+the mail was a refund confirmation and that is the "already resolved and refunded"
+case its own instructions exclude. **The sending address is irrelevant, because
+routing is by the recipient and nothing in `onMessageReceived` reads the sender.**
+A guest alias spends no slot, so this is also the first evidence that the
+three-inbox allowance is not a ceiling on how many people can use the product.
+
+**One gap the test found, recorded rather than fixed.** The front end reads
+claims, records, spend and the address, and reads the `messages` table nowhere, so
+a message that arrives and is declined leaves no trace the owner can see.
+`ingestFromMessage` computes a reason and returns it to a scheduler that discards
+it. A judge who forwards something therefore cannot tell "read and declined" from
+"never arrived", and those two want opposite responses. A product whose argument is
+that it holds the paper trail should be able to show the paper it decided not to
+keep.
 
