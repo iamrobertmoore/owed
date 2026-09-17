@@ -3,16 +3,16 @@
 - **Project:** Owed
 - **Event:** Convex All Gas Hackathon
 - **What it does:** An agent that holds a person's paper trail, finds what they are owed against the counterparty's own published terms, and pursues it.
-- **Live app:** not deployed
+- **Live app:** https://fantastic-hamster-482.convex.site
 - **Repo:** private
 - **Frontend:** Convex static hosting
-- **Convex deployment:** not deployed
+- **Convex deployment:** https://fantastic-hamster-482.convex.cloud
 - **Components:** @agentmail/convex, @firecrawl/firecrawl-convex, @convex-dev/static-hosting, @convex-dev/auth
 - **Convex features:** schema, tables, indexes, vector search, queries, mutations, actions, HTTP actions, crons, scheduled functions, file storage, realtime queries
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-15T17:01:13Z
-- **Last updated:** 2026-09-16T17:03:23Z
+- **Last updated:** 2026-09-17T14:03:55Z
 
 ## Log
 
@@ -160,7 +160,7 @@ HTTP 403:
 
 Both numbers are right and the difference is verification. That is worth more
 than a corrected comment: the design assumes three addresses, and until the
-account is verified it can hold one, which `owed@agentmail.to` already is.
+account is verified it can hold one, which the shared inbox already is.
 Verification is not only what lifts the send restriction, it is what grants the
 allowance the rest of this was built on. Two comments in `convex/inboxes.ts` had
 stated the three as though it were unconditional, and a number in a comment that
@@ -201,7 +201,7 @@ shared guest address, so two accounts can hold one of their own.
 
 The AgentMail account is verified, which unblocks the half of the product that
 could not previously run at all. Before verification the account held exactly one
-inbox and `owed@agentmail.to` already occupied it, so `inboxes.provision` would
+inbox and the shared inbox already occupied it, so `inboxes.provision` would
 have failed for the first real account to sign in. Read from
 `GET /v0/organizations` either side of the verify call: `inbox_limit` went 1 to
 3, `daily_send_limit` 10 to 100, and `agent_verified` false to true.
@@ -222,7 +222,7 @@ addresses, so it is a constraint worth knowing rather than one to design around.
 **The real-account path was proved without spending anything.** A second inbox was
 created, which took `inbox_count` from 1 to 2 of 3, and then deleted, which
 returned it to 1 of 3. The allowance is real and the slot is reclaimable, and the
-account is back to holding only `owed@agentmail.to`.
+account is back to holding only the shared inbox.
 
 **A wrong diagnosis, recorded because the reasoning is the reusable part.** For
 most of an afternoon I treated the missing verification code as a delivery
@@ -249,9 +249,9 @@ time, so the copy and the product disagreed, and the copy was the aspirational o
 
 **The measurement that made it fixable.** The provider delivers a plus-addressed
 message to the shared inbox while keeping the tag in the envelope. Sent from a
-second inbox to `owed+probe@agentmail.to`, the message arrived in
-`owed@agentmail.to` carrying `inbox_id: "owed@agentmail.to"` and
-`to: ["owed+probe@agentmail.to"]`. Both fields, in one object, read off the live
+second inbox to a plus address on the shared inbox, the message arrived in
+the shared inbox carrying `inbox_id` set to the shared inbox and `to` set to the
+tagged address. Both fields, in one object, read off the live
 API. `onMessageReceived` already reads `to` first and looks it up in `inboxes`, so
 the whole change is one row per guest. **The inbound router is not modified**, and
 that is the reason to believe it works: the code that routes mail is code that
@@ -293,3 +293,48 @@ the live backend. And those keys cannot be generated here at all: the sandbox
 terminates any attempt to read private key material as text, by node or by `cat`,
 while `openssl` runs. So deployment step 7, `npx @convex-dev/auth`, is unverified by
 me and has to be run on a machine that is not sandboxed.
+
+### 2026-09-17 - 646a4b3
+
+**The app is live at the URL in the header, and getting it there found a bug that
+a status code could not.** The build uploaded cleanly, all seven variables were
+set on the production deployment, and every path still answered `404`. The body
+was the whole diagnosis: `No matching routes found` is Convex's own router
+speaking, not the file server, so the files were present and nothing was routing
+to them. `convex.config.ts` mounts static hosting **without** an `httpPrefix`,
+which puts the app in charge of HTTP and makes `registerStaticRoutes(http,
+components.staticHosting)` the thing that actually serves the site. It had never
+been called. The package's own docstring, its changelog and its INTEGRATION.md all
+name this exact case, and none of them were read before the deploy rather than
+after. `convex/http.ts` now calls it, with the reason recorded above the call.
+
+It is safe next to the two routes that cannot move. The component's catch-all is
+`GET` only, so the AgentMail webhook's `POST` cannot collide with it, and exact
+app routes take precedence over a prefix route. The other option, letting the
+component own the root, would have displaced `/agentmail/webhook`, which is
+registered with the provider as the delivery URL, and Convex Auth's endpoints,
+`/.well-known/jwks.json` among them, which are expected at the origin.
+
+**A credential's scope is set by the route that creates it, and that cost an
+afternoon.** AgentMail issues three kinds of key from three routes, and the key
+this project had been given came from the inbox route, so it authenticated
+perfectly and was entitled to nothing. `auth me` reports the difference in a field
+(`scope_type`), which is the only place it is stated; every other call fails with a
+permission name rather than a scope error, and the permission named differs by
+endpoint. The replacement is organization-scoped, which is what a deployment needs,
+because one key has to cover creating an address, sending, and reading.
+
+**The webhook is verified by moving it from 500 to 401.** A registered endpoint
+that returns 500 and one that returns `invalid signature` are very different
+things: the first is a route that is not there, the second is the signature check
+running and refusing. Set the secret on the deployment and the route answers the
+second, which is the evidence that the inbound path is wired.
+
+**The README now points at the live ledger**, and the four worked-example links use
+stable slugs rather than row ids. A Convex id belongs to whoever created the row,
+so a link built from one is dead for every other visitor, which is every judge. A
+slug resolves against the caller's own seeded copy. The README also gained the
+sentence it had been missing: a signed-out visitor hits the sign-in screen before
+the ledger, so the deep links are described as the way in once you are in, rather
+than as the way in.
+
