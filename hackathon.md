@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-16T07:50:55Z
-- **Last updated:** 2026-09-17T18:48:11Z
+- **Last updated:** 2026-09-17T18:54:53Z
 
 ## Log
 
@@ -623,3 +623,18 @@ the demo counterparty publishes no terms, so it cannot produce a claim for the a
 a real reply takes weeks. The four fatal findings were all in the seam between what the product does
 and what the entry said about it. The review could not break the scoping, the approval gate, the
 webhook signature check or the arithmetic, and those are where the findings were not.
+
+### 2026-09-17 - ecc4ef1
+
+**The provenance fix had the same defect in the other direction, and the count is where it showed.**
+`a5fe331` moved the paper-trail count onto the records and then branched two ways: all example, or
+"all from real mail". A ledger holding the example and real paper at once took the second branch, so
+four example rows carrying their chips sat under a line calling them all real mail. That is the item-5
+error mirrored, and it is the state the recording session is in, because the example gets loaded beside
+a real forward. There are three states now, and a count of zero gets no suffix at all, because "0
+records, all from real mail" is a sentence about nothing.
+
+**It was found by reading the replacement back, not by the review.** The review named the claims-only
+count. The two-way branch underneath the replacement was mine, and it would have shipped. This log has
+the rule already: a fix is a claim, and it gets the same reading as the thing it replaced. Reading the
+rendered branch is what caught it, and that is the method that has worked every time here.
