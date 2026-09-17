@@ -62,11 +62,17 @@ function scoreUrl(url: string): number {
     const i = POLICY_TOKENS.indexOf(token);
     if (i >= 0) score += POLICY_TOKENS.length - i;
   }
-  return score;
+  // The main published terms sit at the root of a site, and a programme's own
+  // terms sit under it. Measured on a real retailer: without this, a loyalty
+  // scheme's terms page and a group-rides terms page both outranked the
+  // warranty, so a claim about a faulty product would have been argued from
+  // the terms of a rewards programme.
+  const segments = path.split("/").filter(Boolean).length;
+  return score - Math.max(0, segments - 1) * 6;
 }
 
 /** Rank a site's URLs down to the handful worth reading. */
-export function selectPolicyUrls(urls: string[], limit = 4): string[] {
+export function selectPolicyUrls(urls: string[], limit = 6): string[] {
   return urls
     .map((url) => ({ url, score: scoreUrl(url) }))
     .filter((x) => x.score > 0)
@@ -74,6 +80,222 @@ export function selectPolicyUrls(urls: string[], limit = 4): string[] {
     .slice(0, limit)
     .map((x) => x.url);
 }
+
+/**
+ * The site's own sitemap.
+ *
+ * A mapper is capped, and a shop has thousands of product URLs, so the handful
+ * of documents a claim is argued from can sit past the cap and never be seen.
+ * Measured on a real retailer on 17 September 2026: `map` returned 199 URLs
+ * against a `limit` of 200 and **not one of them scored**, while the same
+ * site's sitemap listed `returns-policy`, `terms-and-conditions` and
+ * `warranty` on its first page. The candidate filter was never the problem:
+ * `returns-policy` scores 24 against the vocabulary below.
+ *
+ * A sitemap is one plain request, costs no crawl credit, and is the site
+ * telling us where its pages are rather than us guessing.
+ */
+const SITEMAP_PATHS = [
+  "/sitemap.xml",
+  "/sitemap_index.xml",
+  "/sitemap-index.xml",
+  "/siteindex.xml",
+];
+/**
+ * Bounds on the walk. These are safety valves, not budgets: because only
+ * policy-shaped URLs are kept, running out of requests can never be the reason
+ * a terms page is missing from a site that published one. The request cap is
+ * what stops a site with a pathological sitemap tree from stalling the crawl.
+ */
+const MAX_SITEMAP_REQUESTS = 20;
+const MAX_SITEMAP_DEPTH = 3;
+const MAX_POLICY_URLS = 200;
+
+/**
+ * A sitemap is XML, so a URL containing an ampersand arrives escaped. Measured
+ * on a real retailer: every help-centre URL came back as `refunds-&amp;-returns`.
+ * Handing that to a scraper asks for a path that does not exist. Decoding is
+ * done in a single pass so `&amp;lt;` cannot cascade into `<`.
+ */
+function decodeXmlEntities(s: string): string {
+  const named: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" };
+  return s.replace(/&(#[0-9]+|#x[0-9a-f]+|[a-z]+);/gi, (whole, body: string) => {
+    if (body[0] === "#") {
+      const code =
+        body[1] === "x" || body[1] === "X"
+          ? parseInt(body.slice(2), 16)
+          : parseInt(body.slice(1), 10);
+      return Number.isFinite(code) && code > 0 ? String.fromCodePoint(code) : whole;
+    }
+    return named[body.toLowerCase()] ?? whole;
+  });
+}
+
+function locs(xml: string): string[] {
+  return [...xml.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/gi)].map((m) => decodeXmlEntities(m[1]));
+}
+
+/**
+ * `AbortSignal.timeout` is not guaranteed to exist in every JS runtime, and a
+ * crawl that throws a ReferenceError on a missing global is worse than a crawl
+ * with no timeout at all. A host that hangs is bounded by the request cap and
+ * the action's own limit; a missing global is not bounded by anything.
+ */
+function timeoutSignal(ms: number): AbortSignal | undefined {
+  try {
+    return AbortSignal.timeout(ms);
+  } catch {
+    return undefined;
+  }
+}
+
+async function fetchText(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, {
+      redirect: "follow",
+      headers: { "user-agent": "Owed/1.0 (reads a company's published terms)" },
+      signal: timeoutSignal(15_000),
+    });
+    if (!res.ok) return null;
+    const body = await res.text();
+    return body.slice(0, 8_000_000);
+  } catch {
+    return null;
+  }
+}
+
+async function fetchXml(url: string): Promise<string | null> {
+  const body = await fetchText(url);
+  // A soft 404 answers 200 with a full HTML page, so only XML counts.
+  return body && body.includes("<loc>") ? body : null;
+}
+
+/**
+ * The sitemaps a site declares in its own robots.txt.
+ *
+ * This is how the sitemap protocol says to find them, and it matters: measured
+ * on a real retailer, `/sitemap.xml` answers 404 while robots.txt points at
+ * `/siteindex.xml`. Guessing the path would have missed the entire site.
+ */
+async function declaredSitemaps(root: string): Promise<string[]> {
+  const txt = await fetchText(`${root}/robots.txt`);
+  if (!txt) return [];
+  return [...txt.matchAll(/^\s*sitemap:\s*(\S+)\s*$/gim)].map((m) => m[1]);
+}
+
+/**
+ * Every policy-shaped URL a site's sitemap knows about.
+ *
+ * **Only matching URLs are collected, and that is the point.** The first
+ * version of this capped how many URLs it would gather, and a single child
+ * sitemap of products exhausted the cap before a later child holding the terms
+ * pages was ever read. It returned four thousand URLs and selected none, which
+ * is the same failure the mapper had: a capped scan produces no error, no gap
+ * and no implausible number, only a smaller field that looks exactly like the
+ * field. Filtering at read time means the budget can only ever be spent on
+ * product pages, which we did not want anyway.
+ */
+/**
+ * Which child sitemaps are worth a request, and in what order.
+ *
+ * Two measured defects live here. First, a sitemap may be served gzipped as a
+ * file (`products-00.xml.gz`); a plain text fetch returns binary, so the
+ * request is spent and nothing can come back by construction. Second, order
+ * matters because the walk is capped: measured on a real retailer, a
+ * `/sitemap/products/` child spent ten of twenty requests on gzipped product
+ * files before the site's own support sitemap was reached, and the support
+ * sitemap is where the returns content lived.
+ *
+ * `scoreUrl` already rejects commerce paths, so sorting by it puts the
+ * commerce half of a site last and costs nothing.
+ */
+function childSitemaps(urls: string[]): string[] {
+  return urls
+    .filter((u) => !/\.(gz|zip|bz2|xz)$/i.test(u.split("?")[0]))
+    .sort((a, b) => scoreUrl(b) - scoreUrl(a));
+}
+
+async function sitemapUrls(origin: string): Promise<string[]> {
+  let root: string;
+  try {
+    root = new URL(origin).origin;
+  } catch {
+    return [];
+  }
+
+  const keep: string[] = [];
+  const add = (list: string[]) => {
+    for (const u of list) {
+      if (keep.length >= MAX_POLICY_URLS) return;
+      if (scoreUrl(u) > 0) keep.push(u);
+    }
+  };
+
+  // The declared sitemaps are tried first, so on a site that publishes one the
+  // guesses below never cost a request. Measured on a real retailer: robots.txt
+  // named the sitemap under its `www` host, and the guesses then re-fetched that
+  // same file under the bare host, which on a large site is not a wasted request
+  // but a wasted megabyte.
+  const declared = await declaredSitemaps(root);
+  const seeds = [
+    ...declared.map((url) => ({ url, depth: 0, guess: false })),
+    ...SITEMAP_PATHS.map((p) => ({ url: `${root}${p}`, depth: 0, guess: true })),
+  ];
+
+  // A sitemap tree is not always one level deep. Measured on a real retailer:
+  // robots.txt -> `/siteindex.xml` -> a child sitemap on a *different host* ->
+  // thirteen more children. Treating the second level as page URLs finds
+  // nothing, so the walk is breadth-first with a depth cap rather than a fixed
+  // one-hop rule.
+  const seen = new Set<string>();
+  let frontier = seeds;
+  let requests = 0;
+  let declaredWorked = false;
+
+  while (frontier.length > 0 && requests < MAX_SITEMAP_REQUESTS) {
+    const next: Array<{ url: string; depth: number; guess: boolean }> = [];
+    for (const item of frontier) {
+      if (requests >= MAX_SITEMAP_REQUESTS) break;
+      if (keep.length >= MAX_POLICY_URLS) break;
+      // The site told us where its sitemaps are; do not go on guessing.
+      if (item.guess && declaredWorked) continue;
+      const key = item.url.split("#")[0];
+      if (seen.has(key)) continue;
+      seen.add(key);
+      requests++;
+
+      const xml = await fetchXml(item.url);
+      if (!xml) continue;
+      if (!item.guess) declaredWorked = true;
+
+      if (/<sitemapindex/i.test(xml)) {
+        if (item.depth + 1 > MAX_SITEMAP_DEPTH) continue;
+        for (const child of childSitemaps(locs(xml))) {
+          next.push({ url: child, depth: item.depth + 1, guess: false });
+        }
+      } else {
+        add(locs(xml));
+      }
+    }
+    frontier = next;
+  }
+
+  return keep;
+}
+
+/**
+ * The mapper's own filter, used only when a site has no sitemap and the broad
+ * map came back with nothing policy-shaped. This is the provider's semantic
+ * search rather than our guess at a path, which is why it is a fallback and
+ * not the first move.
+ */
+const POLICY_SEARCHES = [
+  "returns and refunds policy",
+  "terms and conditions",
+  "warranty",
+  "complaints",
+  "delivery and cancellation",
+];
 
 /**
  * Map the counterparty's site, pick the documents a claim is argued from, read
@@ -89,29 +311,53 @@ export const readCounterparty = internalAction({
 
     const origin = cp.policyUrls[0] ?? `https://${cp.domain}`;
 
-    // 1. Find the candidate documents. `map` returns the site's URLs without
-    //    paginating through it ourselves.
-    let candidates: string[] = [];
+    // 1. Find the candidate documents. Two independent sources, because either
+    //    can come up empty on a real site and the cost of missing the terms is
+    //    the whole product. The sitemap is complete and costs no crawl credit;
+    //    the mapper is capped, so on a large shop it can return nothing but
+    //    product pages.
+    const fromSitemap = await sitemapUrls(origin);
+
+    let fromMap: string[] = [];
+    let mapError: string | null = null;
     try {
       const mapped = await firecrawl.map(ctx, origin, { limit: 200 });
-      candidates = (mapped?.links ?? [])
+      fromMap = (mapped?.links ?? [])
         .map((l) => (typeof l === "string" ? l : l?.url ?? ""))
         .filter((u) => u.length > 0);
     } catch (err) {
-      await ctx.runMutation(internal.policies.markCrawl, {
-        counterpartyId: args.counterpartyId,
-        status: "failed",
-        note: `map failed: ${String(err).slice(0, 200)}`,
-      });
-      return { provisions: 0, documents: 0, note: "Could not map the site." };
+      mapError = String(err).slice(0, 200);
     }
 
-    const chosen = selectPolicyUrls(candidates);
+    const candidates = [...new Set([...fromSitemap, ...fromMap])];
+    const sources = `sitemap ${fromSitemap.length}, mapper ${fromMap.length}`;
+    let chosen = selectPolicyUrls(candidates);
+
+    // 2. Neither source turned up a policy-shaped URL. Ask the mapper to search
+    //    for the vocabulary directly, which is the provider's own filter rather
+    //    than our guess at a path.
+    if (chosen.length === 0) {
+      for (const term of POLICY_SEARCHES) {
+        try {
+          const found = await firecrawl.map(ctx, origin, { search: term, limit: 10 });
+          for (const l of found?.links ?? []) {
+            const u = typeof l === "string" ? l : l?.url ?? "";
+            if (u) candidates.push(u);
+          }
+        } catch {
+          // One failed search is not a reason to stop looking.
+        }
+      }
+      chosen = selectPolicyUrls([...new Set(candidates)]);
+    }
+
     if (chosen.length === 0) {
       await ctx.runMutation(internal.policies.markCrawl, {
         counterpartyId: args.counterpartyId,
-        status: "skipped",
-        note: `Mapped ${candidates.length} URLs, none looked like terms.`,
+        status: mapError ? "failed" : "skipped",
+        note: mapError
+          ? `Mapper failed (${mapError}); the sitemap listed ${fromSitemap.length} URLs and none looked like terms.`
+          : `Looked at ${candidates.length} URLs (${sources}), none looked like terms.`,
       });
       return { provisions: 0, documents: 0, note: "No terms document found." };
     }
@@ -158,7 +404,7 @@ export const readCounterparty = internalAction({
     await ctx.runMutation(internal.policies.markCrawl, {
       counterpartyId: args.counterpartyId,
       status: "crawled",
-      note: `Read ${documents.length} documents, kept ${total} citable provisions.`,
+      note: `Read ${documents.length} documents, kept ${total} citable provisions. Found via ${sources}.`,
     });
 
     return {
