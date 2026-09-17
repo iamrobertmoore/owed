@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-15T17:01:13Z
-- **Last updated:** 2026-09-17T14:51:37Z
+- **Last updated:** 2026-09-17T16:25:38Z
 
 ## Log
 
@@ -360,4 +360,115 @@ it. A judge who forwards something therefore cannot tell "read and declined" fro
 "never arrived", and those two want opposite responses. A product whose argument is
 that it holds the paper trail should be able to show the paper it decided not to
 keep.
+
+### 2026-09-17 - fb1b206
+
+**The terms reader could not read a real retailer's terms, and the cause was a cap
+rather than a filter.** A forwarded order confirmation produced a record and a
+counterparty, and the counterparty's crawl note read `Mapped 199 URLs, none looked
+like terms.` The mapper had returned 199 URLs against a limit of 200 and not one of
+them scored, while the same site's sitemap listed `returns-policy`,
+`terms-and-conditions` and `warranty` on its first page. `returns-policy` scores 24
+against the vocabulary, so the candidate filter was never the problem: a shop has
+thousands of product URLs and the handful of documents a claim is argued from sit
+past the cap. That is the defect class this log keeps recording. A capped scan
+produces no error, no gap and no implausible number, only a smaller field that looks
+exactly like the field.
+
+**The fix is the site's own sitemap**, which is complete, costs no crawl credit, and
+is the site telling us where its pages are rather than us guessing. Four further
+defects were found by measuring, and three of them were introduced by the fix for
+the one before.
+
+A sitemap is XML, so a URL containing an ampersand arrives escaped. Every
+help-centre URL on one retailer came back as `refunds-&amp;-returns`, and handing
+that to a scraper asks for a path that does not exist. Entities are now decoded in a
+single pass, so `&amp;lt;` cannot cascade into `<`.
+
+The first version of the sitemap reader capped how many URLs it would gather. A
+single child sitemap of products exhausted that cap before a later child holding the
+terms pages was read, and it returned four thousand URLs and selected none, which is
+the mapper's failure reintroduced inside the fix for it. Filtering with the scorer at
+read time means the budget can only be spent on pages that were not wanted anyway.
+
+The walk is breadth-first with a depth cap rather than one hop. A sitemap tree is not
+always one level deep: one retailer's robots.txt points at a sitemap whose children
+live on a different host again, and treating the second level as page URLs finds
+nothing. Sitemaps a site declares in robots.txt are tried before any guessed path,
+and the guesses are skipped once a declared one works, because otherwise the same
+file is fetched twice under two hostnames. Gzipped child sitemaps are dropped at the
+queue rather than at the fetch, because a plain text request returns binary for them:
+ten of twenty requests went on gzipped product files before the site's own support
+sitemap was reached, and the support sitemap is where the returns content lived.
+
+The scorer gained a depth prior, found by measuring rather than reasoning. Before it,
+a loyalty scheme's terms page and a group-rides terms page both outranked the
+warranty, so a claim about a faulty product would have been argued from the terms of
+a rewards programme.
+
+**Verified by running the real source.** The harness extracts the crawler out of
+`convex/policies.ts` rather than copying it, and refuses to run unless the extracted
+text carries every marker of the current version. A hand-copied harness is a second
+implementation, and it can pass while the file that deploys fails. Four of six live
+retailers now return the right documents where two returned none. The remaining two
+answer 403 to the sitemap request itself, one of them behind a bot challenge, which is
+the case the mapper fallback exists for rather than a defect to fix.
+
+### 2026-09-17 - 0fdd3c7
+
+**The gap the inbound test found is closed.** The front end read claims, records,
+spend and the address, and read the `messages` table nowhere, so a message that
+arrived and was declined left no trace and could not be told from a delivery that
+never came. There is now an arrivals list on the ledger: the sender, when it arrived,
+the claim it became if it became one, a chip reading either `became a record` or
+`not kept`, and the reader's own reason underneath, kept in its own words rather than
+summarised. It is scoped to the caller like every other read, and it is inbound paper
+only. `inboxes` writes a `claimId` when a message is a reply to a letter the agent
+sent, and only post arriving without one is handed to the reader, so replies stay on
+the claim they belong to rather than being given a decision they were never given.
+
+**The decision was never lost, only unlinked.** Every model call is cached by a hash
+of its exact prompt, so the reply was still in `aiCache`; what was missing was the
+field on the message. `ingestFromMessage` computed a reason and returned it to a
+scheduler that discarded it, so three fields were added to `messages` and written on
+all three exits, including the branch where the reader's reply was not JSON. Messages
+that predate the field are backfilled by recomputing the same hash from the same
+prompt. The reader's instructions moved out of the action into a module constant,
+because the cache key is a hash of that text and two copies of a prompt that must
+stay byte-identical is a bug waiting to happen.
+
+**The backfill was checked before it was written, not after.** Two keys were read out
+of this deployment's own cache and the extraction had to reproduce both, which it
+does. That check is capable of failing for the reason claimed: one character
+different in the prompt and it matches nothing, which would have been
+indistinguishable from there being no decision to recover. It recovered two real
+messages, one kept and one declined. A message whose call is not in the cache is left
+untouched rather than marked declined, because "we did not record a decision" and
+"the agent decided no" are different facts, and only one of them is interesting.
+
+**The worked example now demonstrates the surface**, with four arrivals and one
+refusal. Each carries a `demoKey` on the message for the same reason `claims` does,
+because a reconstructed message that was turned down looks exactly like a real one
+that was, and only one of those is evidence. The refusal is the more instructive of
+the two: it is real post from a company, it carries a price, and it is still not a
+record, because the refund it describes has already been made.
+
+**Verified in a browser against the deployed app**, not from the build. The five
+seeded rows render with both chips and their reasons, the four kept rows open the
+right claim, and the declined row is not clickable because there is nowhere for it to
+go. Rendering caught a defect the typecheck could not, where a wrapped reason slid
+back under its own label and lost the left edge of the paragraph.
+
+**And the deploy path nearly shipped a dev-pointing app.** `npm run build` on its own
+bakes `VITE_CONVEX_URL` from `.env.local` into the bundle, and that value is the dev
+deployment. Only the static-hosting CLI's build sets the production URL. Found by
+building both ways and reading the host out of the output rather than by reading the
+docs, and the two builds differ in hash from identical source, which is the tell. The
+deployed bundle was then checked directly, so the app on the judged URL is known to
+point at the judged backend.
+
+**A source comment nearly published a personal address.** The sweep for real-world
+identifiers before committing caught the owner's own mail address, used as an example
+of a raw `From` header in `src/App.tsx`, in a file that becomes public. Replaced with
+a generic form.
 
