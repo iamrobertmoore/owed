@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { internalAction, internalMutation, internalQuery, query } from "./_generated/server";
+import { internalAction, internalMutation, internalQuery } from "./_generated/server";
 import { components, internal } from "./_generated/api";
 import { FirecrawlClient } from "@firecrawl/firecrawl-convex";
 import type { Doc, Id } from "./_generated/dataModel";
@@ -595,8 +595,17 @@ export const addProvision = internalMutation({
   handler: async (ctx, args) => await ctx.db.insert("provisions", args),
 });
 
-/** What was read from a counterparty, for the UI. */
-export const forCounterparty = query({
+/**
+ * What was read from a counterparty.
+ *
+ * Internal, not public. It takes a `counterpartyId` and returns that company's
+ * provisions, so as a public query it answered an unauthenticated caller for a
+ * counterparty it does not own, which is the one read in this app that did not
+ * re-check the caller. Nothing calls it yet: the claim sheet reaches provisions
+ * through `claims.detail`, which is scoped. Kept as an internal query so the
+ * next caller has to be an action that has already established the owner.
+ */
+export const forCounterparty = internalQuery({
   args: { counterpartyId: v.id("counterparties") },
   handler: async (ctx, args) => {
     const rows = await ctx.db

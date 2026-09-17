@@ -14,10 +14,9 @@ import type { Id } from "./_generated/dataModel";
 /**
  * The agent's own address.
  *
- * This is the product's front door and the reason the thesis is not the one
- * everyone else built. The owner routes the paper trail to an address the
- * agent holds, so the agent sees what it needs and nothing else. It never asks
- * for a password to a personal mailbox and never reads a life.
+ * This is the product's front door. The owner routes the paper trail to an
+ * address the agent holds, so the agent sees what it needs and nothing else. It
+ * never asks for a password to a personal mailbox and never reads a life.
  */
 const agentmail = new AgentMail(components.agentmail, {
   onMessageReceived: internal.inboxes.onMessageReceived,
@@ -287,6 +286,30 @@ export const touch = mutation({
 });
 
 /**
+ * Bare addresses out of a `To` field.
+ *
+ * The field is not one shape. It arrives as a plain address, as the
+ * `Name <address@host>` form, as a comma-joined list when the owner forwarded
+ * something that had more than one recipient, or as an array of any of those.
+ * Casting it with `String()` produced `"a@x.com, b@y.com"` for the list case,
+ * which matches no inbox and dropped the message silently. Every candidate is
+ * returned so the caller can try them in turn.
+ */
+function recipientAddresses(to: unknown): string[] {
+  const items = Array.isArray(to) ? to : [to];
+  const out: string[] = [];
+  for (const item of items) {
+    if (typeof item !== "string") continue;
+    for (const part of item.split(/[,;]/)) {
+      const angled = part.match(/<([^>]+)>/);
+      const address = (angled ? angled[1] : part).trim();
+      if (address) out.push(address);
+    }
+  }
+  return out;
+}
+
+/**
  * A reply has arrived at the agent's address.
  *
  * Route it to the claim it belongs to, store it, and schedule the read. The
@@ -302,16 +325,8 @@ export const onMessageReceived = internalMutation({
   handler: async (ctx, args) => {
     const inboxAddress: string = args.message?.inbox_id ?? args.message?.inboxId ?? "";
     const threadId: string = args.message?.thread_id ?? args.message?.threadId ?? "";
-    const toAddress: string = String(
-      args.message?.to ?? args.message?.to_address ?? inboxAddress,
-    );
-
-    // Which owner does this address belong to?
-    const inbox = await ctx.db
-      .query("inboxes")
-      .withIndex("by_address", (q) => q.eq("address", toAddress))
-      .unique();
-    if (!inbox) return;
+    const candidates = recipientAddresses(args.message?.to ?? args.message?.to_address);
+    if (candidates.length === 0 && inboxAddress) candidates.push(inboxAddress);
 
     const providerMessageId: string =
       args.message?.message_id ?? args.message?.messageId ?? args.eventId;
@@ -332,12 +347,43 @@ export const onMessageReceived = internalMutation({
     ].map((l: unknown) => String(l));
     const claimLabel = labels.find((l) => l.startsWith("claim-"));
 
+    // Which owner does this belong to? The address answers it when the mail
+    // went to a per-owner alias. It does not answer it when the mail is a reply
+    // to a letter sent from the shared inbox, because that reply comes back to
+    // the bare shared address, which is no owner's `inboxes.address`. The claim
+    // label is therefore resolved before giving up rather than after. Returning
+    // early on the address miss is what dropped every reply the product was
+    // ever sent, and it failed silently, which is why the inbound half looked
+    // proven while the reply half had never run.
+    let inbox = null;
+    for (const address of candidates) {
+      inbox = await ctx.db
+        .query("inboxes")
+        .withIndex("by_address", (q) => q.eq("address", address))
+        .unique();
+      if (inbox) break;
+    }
+
     let claimId: Id<"claims"> | undefined;
     if (claimLabel) {
       const candidate = claimLabel.slice("claim-".length) as Id<"claims">;
       const claim = await ctx.db.get(candidate);
-      if (claim && claim.userId === inbox.userId) claimId = candidate;
+      if (claim) {
+        if (!inbox) {
+          inbox = await ctx.db
+            .query("inboxes")
+            .withIndex("by_user", (q) => q.eq("userId", claim.userId))
+            .unique();
+        }
+        if (inbox && claim.userId === inbox.userId) claimId = candidate;
+      }
     }
+
+    if (!inbox) return;
+
+    // Store the address that actually matched an owner, not the raw `To` field,
+    // which may have held several recipients.
+    const toAddress = inbox.address;
 
     const now = Date.now();
     const messageId = await ctx.db.insert("messages", {

@@ -440,7 +440,12 @@ export const list = query({
   args: {},
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
-    if (userId === null) return [];
+    // `null`, not `[]`, for a signed-out caller. Every other read in this app
+    // returns null when there is no user, and an empty array is a different
+    // statement: it says "this person has no records" to a client that has not
+    // said who they are. The front end already treats null and [] the same way,
+    // so this costs nothing and stops one read disagreeing with the rest.
+    if (userId === null) return null;
     const rows = await ctx.db
       .query("records")
       .withIndex("by_user", (q) => q.eq("userId", userId))

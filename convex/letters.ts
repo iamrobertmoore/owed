@@ -265,6 +265,13 @@ export const send = internalMutation({
       to,
       subject: draftMessage.subject,
       text: draftMessage.text,
+      // Without this the letter goes out from the shared inbox and the reply
+      // comes back to the bare shared address, which is no owner's
+      // `inboxes.address`, so routing by address finds nobody. The reply then
+      // resolves by the `claim-<id>` label instead, but setting `replyTo` to the
+      // owner's own address means the ordinary address path works too and the
+      // label is a safety net rather than the only route home.
+      replyTo: inbox.address,
       labels: ["owed", `claim-${args.claimId}`, rung.kind],
     });
 
