@@ -3,6 +3,8 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { internalAction, internalMutation, internalQuery, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
+import { contentKey } from "./ai";
+import { MODEL } from "./pricing";
 
 /**
  * The paper trail.
@@ -66,6 +68,145 @@ export const upsertCounterparty = internalMutation({
 });
 
 /**
+ * Write the reader's decision back onto the message it read.
+ *
+ * The reason used to be computed and returned to a scheduler that discarded
+ * it, so a message that arrived and was declined left no trace anywhere. An
+ * owner who forwarded something could not tell that from a message that never
+ * arrived, and those two want opposite responses: one means the product looked
+ * and said no, the other means the post is broken.
+ */
+export const markIngest = internalMutation({
+  args: {
+    messageId: v.id("messages"),
+    outcome: v.union(v.literal("kept"), v.literal("declined")),
+    reason: v.string(),
+    recordId: v.optional(v.id("records")),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.messageId, {
+      ingestOutcome: args.outcome,
+      ingestReason: args.reason.slice(0, 300),
+      ...(args.recordId ? { recordId: args.recordId } : {}),
+    });
+  },
+});
+
+/**
+ * Put the reader's past decisions back onto the messages they were made about.
+ *
+ * The decision was never lost. Every model call is cached by a hash of its
+ * exact prompt, so the reply is still in `aiCache`; what was missing was the
+ * link from a message to its own decision, because `ingestOutcome` was added
+ * after the first messages had already arrived. This rebuilds that link by
+ * recomputing the same hash from the same prompt.
+ *
+ * It reconstructs rather than guesses. There is one reader prompt, held in
+ * `INGEST_SYSTEM`, so the key computed here is the key the call used. That was
+ * checked against this deployment's own cache before this was written: two
+ * known keys, both reproduced exactly.
+ *
+ * A message whose call is not in the cache is left untouched rather than
+ * marked declined. "We did not record a decision" and "the agent decided no"
+ * are different facts, and the second one is the interesting one.
+ */
+export const backfillIngest = internalMutation({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const messages = await ctx.db
+      .query("messages")
+      .order("desc")
+      .take(args.limit ?? 300);
+
+    let recovered = 0;
+    let alreadyRecorded = 0;
+    let noCachedCall = 0;
+
+    for (const m of messages) {
+      if (m.direction !== "inbound") continue;
+      if (m.ingestOutcome !== undefined) {
+        alreadyRecorded++;
+        continue;
+      }
+
+      // Byte-for-byte the inputs the reader used, because the key is a hash of
+      // them and anything else finds nothing.
+      const user = `From: ${m.fromAddress}\nSubject: ${m.subject}\n\n${(m.text ?? "").slice(0, 12_000)}`;
+      const key = contentKey("complete", MODEL, "ingest-paper-trail", INGEST_SYSTEM, user);
+
+      const cached = await ctx.runQuery(internal.aiCache.get, { key });
+      if (!cached) {
+        noCachedCall++;
+        continue;
+      }
+
+      let parsed: { keep?: boolean; reason?: string };
+      try {
+        parsed = JSON.parse(cached.response);
+      } catch {
+        noCachedCall++;
+        continue;
+      }
+
+      // The record is looked up rather than assumed: a message can be kept and
+      // still have no record if the write after it failed.
+      let recordId: Id<"records"> | undefined;
+      if (parsed.keep) {
+        const record = await ctx.db
+          .query("records")
+          .withIndex("by_user", (q) => q.eq("userId", m.userId))
+          .filter((q) => q.eq(q.field("sourceMessageId"), m._id))
+          .first();
+        recordId = record?._id;
+      }
+
+      await ctx.db.patch(m._id, {
+        ingestOutcome: parsed.keep ? "kept" : "declined",
+        ingestReason: (parsed.reason ?? "No reason given").slice(0, 300),
+        ...(recordId ? { recordId } : {}),
+      });
+      recovered++;
+    }
+
+    return { scanned: messages.length, recovered, alreadyRecorded, noCachedCall };
+  },
+});
+
+/**
+ * The reader's instructions, as a module constant.
+ *
+ * It is hoisted out of the action because the backfill below has to reproduce
+ * a past call *exactly* to find it in the cache, and the cache key is a hash of
+ * this text. Two copies of a prompt that must stay byte-identical is a bug
+ * waiting to happen, so there is one copy.
+ */
+export const INGEST_SYSTEM = [
+  "You read an email that arrived at someone's agent address and decide whether",
+  "it is a record of a transaction or commitment worth keeping.",
+  "",
+  "Worth keeping: order confirmations, booking confirmations, delivery promises,",
+  "subscription and renewal notices, service appointments, quotes that were",
+  "accepted, and anything stating a price, a date or a deadline.",
+  "",
+  "Not worth keeping: marketing, newsletters, receipts for things already",
+  "resolved and refunded, social notifications, and anything with no price and",
+  "no date.",
+  "",
+  "Return JSON:",
+  "{\"keep\": boolean, \"reason\": string, \"kind\": \"order\"|\"booking\"|\"subscription\"|\"service\"|\"other\",",
+  " \"counterpartyName\": string, \"counterpartyDomain\": string, \"reference\": string,",
+  " \"description\": string, \"amount\": number|null, \"currency\": string|null, \"dueAt\": string|null}",
+  "",
+  "Rules:",
+  "- `counterpartyDomain` must be the sender's domain, without a scheme.",
+  "- `dueAt` must be an ISO 8601 date if the message states one, else null. Do",
+  "  not infer a date that is not written down.",
+  "- `amount` must be a number if the message states one, else null. Never guess.",
+  "- `reference` is the order, booking or account number if there is one, else \"\".",
+  "- If you are not sure, set keep to false and say why.",
+].join("\n");
+
+/**
  * Read a message that arrived at the agent's address and decide whether it is
  * a piece of paper worth keeping.
  *
@@ -79,31 +220,7 @@ export const ingestFromMessage = internalAction({
     const message = await ctx.runQuery(internal.triage.getMessage, { messageId: args.messageId });
     if (!message) return { kept: false, reason: "No such message" };
 
-    const system = [
-      "You read an email that arrived at someone's agent address and decide whether",
-      "it is a record of a transaction or commitment worth keeping.",
-      "",
-      "Worth keeping: order confirmations, booking confirmations, delivery promises,",
-      "subscription and renewal notices, service appointments, quotes that were",
-      "accepted, and anything stating a price, a date or a deadline.",
-      "",
-      "Not worth keeping: marketing, newsletters, receipts for things already",
-      "resolved and refunded, social notifications, and anything with no price and",
-      "no date.",
-      "",
-      "Return JSON:",
-      "{\"keep\": boolean, \"reason\": string, \"kind\": \"order\"|\"booking\"|\"subscription\"|\"service\"|\"other\",",
-      " \"counterpartyName\": string, \"counterpartyDomain\": string, \"reference\": string,",
-      " \"description\": string, \"amount\": number|null, \"currency\": string|null, \"dueAt\": string|null}",
-      "",
-      "Rules:",
-      "- `counterpartyDomain` must be the sender's domain, without a scheme.",
-      "- `dueAt` must be an ISO 8601 date if the message states one, else null. Do",
-      "  not infer a date that is not written down.",
-      "- `amount` must be a number if the message states one, else null. Never guess.",
-      "- `reference` is the order, booking or account number if there is one, else \"\".",
-      "- If you are not sure, set keep to false and say why.",
-    ].join("\n");
+    const system = INGEST_SYSTEM;
 
     const raw = await ctx.runAction(internal.ai.complete, {
       operation: "ingest-paper-trail",
@@ -128,10 +245,20 @@ export const ingestFromMessage = internalAction({
     try {
       parsed = JSON.parse(raw);
     } catch {
+      await ctx.runMutation(internal.records.markIngest, {
+        messageId: args.messageId,
+        outcome: "declined",
+        reason: "The reader's reply was not JSON, so nothing could be kept from it.",
+      });
       return { kept: false, reason: "Model reply was not JSON" };
     }
 
     if (!parsed.keep || !parsed.counterpartyDomain) {
+      await ctx.runMutation(internal.records.markIngest, {
+        messageId: args.messageId,
+        outcome: "declined",
+        reason: parsed.reason ?? "Not a record",
+      });
       return { kept: false, reason: parsed.reason ?? "Not a record" };
     }
 
@@ -163,6 +290,12 @@ export const ingestFromMessage = internalAction({
 
     // Now go and look for an entitlement in the gap between what was promised
     // and what the terms say.
+    await ctx.runMutation(internal.records.markIngest, {
+      messageId: args.messageId,
+      outcome: "kept",
+      reason: parsed.reason ?? "Kept as a record.",
+      recordId,
+    });
     await ctx.scheduler.runAfter(0, internal.records.detect, { recordId });
 
     return { kept: true, reason: parsed.reason ?? "Kept" };

@@ -106,6 +106,24 @@ type DemoCase = {
   };
   letters: DemoLetter[];
   replies?: DemoReply[];
+  /**
+   * The message that arrived to start this case, and what the reader made of
+   * it.
+   *
+   * The arrivals list is the screen the product's argument actually rests on:
+   * post arrived, the agent read it, and the record came out of that reading.
+   * Without an arrival the worked example shows a paper trail with no paper
+   * behind it, which is the one thing a visitor cannot check for themselves.
+   */
+  paper: {
+    fromAddress: string;
+    subject: string;
+    text: string;
+    /** What the reader decided, in its own words. */
+    reason: string;
+    /** Days before now that it arrived. */
+    daysAgo: number;
+  };
   events: { kind: "detected" | "policy_read" | "drafted" | "approved" | "sent" | "replied" | "classified" | "escalated" | "settled" | "exhausted" | "note"; detail: string; daysAgo: number }[];
 };
 
@@ -133,6 +151,25 @@ const DEMO_CASES: DemoCase[] = [
       amount: 349,
       daysAgo: 46,
       dueInDays: -44,
+    },
+    paper: {
+      fromAddress: "orders@haldenoptics.example",
+      subject: "Order HO-4482 confirmed",
+      daysAgo: 46,
+      text: `Hello,
+
+Thank you for your order. Your 35mm f/1.8 lens has been packed and should reach you within three working days.
+
+Order HO-4482
+35mm f/1.8 lens, one off
+Subtotal £290.83
+VAT £58.17
+Total paid £349.00 GBP
+Card ending 4417
+
+Halden Optics`,
+      reason:
+        "An order confirmation stating what was bought, from whom, and for how much, so it is the paper a claim about the order would be argued from.",
     },
     claim: {
       title: "Damaged lens, refund owed under their own returns policy",
@@ -195,6 +232,23 @@ Robert`,
       amount: 180,
       daysAgo: 34,
       dueInDays: -32,
+    },
+    paper: {
+      fromAddress: "reservations@bramblecourt.example",
+      subject: "Your booking BC-9931 is confirmed",
+      daysAgo: 34,
+      text: `Dear Mr Moore,
+
+We look forward to welcoming you. Your booking is confirmed as follows.
+
+Booking BC-9931
+Two nights, room 214, arriving Friday
+Rate £90.00 per night
+A deposit of £180.00 will be taken at check-in and returned to the same card after your stay.
+
+Bramble Court Hotel`,
+      reason:
+        "A booking confirmation with a date, a rate and a stated deposit, so it is the paper a claim about the deposit would be argued from.",
     },
     claim: {
       title: "Deposit promised back in ten working days, still held",
@@ -274,6 +328,23 @@ Front of House`,
       amount: 128.4,
       daysAgo: 22,
       dueInDays: -22,
+    },
+    paper: {
+      fromAddress: "tickets@tessellaterail.example",
+      subject: "Your tickets, booking TR-2210",
+      daysAgo: 22,
+      text: `Hello,
+
+Your booking is confirmed. Please have this email with you.
+
+Booking TR-2210
+Outward: 07:12, Saturday, advance single
+Seat reserved, coach C
+Total paid £128.40 GBP
+
+Tessellate Rail`,
+      reason:
+        "A ticket confirmation stating a departure time, a booking reference and a price, so it is the paper a claim about the journey would be argued from.",
     },
     claim: {
       title: "Cancelled service, refund owed without an administration fee",
@@ -358,6 +429,25 @@ Robert`,
       daysAgo: 4,
       dueInDays: 22,
     },
+    paper: {
+      fromAddress: "billing@ashgrovebroadband.example",
+      subject: "Your contract AB-7741 and what is changing in October",
+      daysAgo: 4,
+      text: `Hello,
+
+Your account is in good standing and your contract runs to 14 March.
+
+Account AB-7741
+Monthly charge £34.00, rising to £40.50 from 1 October
+Minimum term ends 14 March
+Early termination charge if you leave before then £78.00
+
+The increase is to fund network investment in your area.
+
+Ashgrove Broadband`,
+      reason:
+        "A notice of a price change stating the account, the new charge and the early termination charge, so it is the paper a claim about the contract would be argued from.",
+    },
     claim: {
       title: "Mid-contract price rise, right to leave without a charge",
       basis:
@@ -393,6 +483,36 @@ Robert`,
       { kind: "policy_read", daysAgo: 3, detail: "Read Terms. Clause 11.3 supports the claim and clause 11.4 is the exclusion they would rely on." },
       { kind: "drafted", daysAgo: 0, detail: "Drafted a letter citing clause 11.3 and answering clause 11.4. Waiting on the owner to send it." },
     ],
+  },
+];
+
+/**
+ * One message that arrived and was turned down.
+ *
+ * The declined half of the reader's job is the more interesting one and the
+ * harder to see, because the interesting thing about it is that it looks like
+ * it should be kept. This is real post from a company, it carries a price, and
+ * it is still not a record: the refund it describes has already been made, so
+ * there is nothing left to hold anyone to. A reader that hoarded it would be
+ * filling the ledger with settled business.
+ *
+ * Shown rather than hidden, because a message that was read and turned down
+ * has to be distinguishable from one that never arrived.
+ */
+const DEMO_DECLINED = [
+  {
+    fromAddress: "notices@meridianhome.example",
+    subject: "Your refund of £64.00 has been processed",
+    daysAgo: 9,
+    text: `Hello,
+
+We have released the authorisation of £64.00 on order MH-2291 back to the card you paid with. It should show on your statement within five working days.
+
+Nothing further is owed on this order and no action is needed from you.
+
+Meridian Home`,
+    reason:
+      "A refund notification for something already resolved and refunded, so there is no outstanding commitment to hold them to.",
   },
 ];
 
@@ -499,6 +619,30 @@ export const seedForUser = internalMutation({
         occurredAt: now - demo.record.daysAgo * DAY,
       });
 
+      /*
+        The message the record came out of.
+
+        No `claimId`, which is what makes it paper rather than a reply: the
+        live path draws the same distinction, and only paper is handed to the
+        reader. It carries the reader's own reason and points at the record it
+        became, so the arrivals list shows a decision and its consequence
+        rather than a sentence with nothing behind it.
+      */
+      await ctx.db.insert("messages", {
+        userId,
+        direction: "inbound",
+        fromAddress: demo.paper.fromAddress,
+        toAddress: GUEST_ADDRESS,
+        subject: demo.paper.subject,
+        text: demo.paper.text,
+        providerMessageId: `example-${userId}-${demo.key}-paper`,
+        ingestOutcome: "kept",
+        ingestReason: demo.paper.reason,
+        recordId,
+        demoKey: demo.key,
+        at: now - demo.paper.daysAgo * DAY,
+      });
+
       const claimId = await ctx.db.insert("claims", {
         userId,
         counterpartyId,
@@ -537,6 +681,7 @@ export const seedForUser = internalMutation({
           text: letter.text,
           // Unique per guest, so this never collides with a real delivery.
           providerMessageId: `example-${userId}-${demo.key}-out-${index}`,
+          demoKey: demo.key,
           at: now - letter.daysAgo * DAY,
         });
       }
@@ -553,6 +698,7 @@ export const seedForUser = internalMutation({
           providerMessageId: `example-${userId}-${demo.key}-in-${index}`,
           classification: reply.classification,
           commitment: reply.commitment,
+          demoKey: demo.key,
           at: now - reply.daysAgo * DAY,
         });
       }
@@ -565,6 +711,25 @@ export const seedForUser = internalMutation({
           detail: event.detail,
         });
       }
+    }
+
+    // Paper that was read and turned down. It belongs to no claim and no
+    // record, which is exactly why it has to be listed somewhere: otherwise a
+    // refusal is invisible and looks the same as a delivery that never came.
+    for (const [index, declined] of DEMO_DECLINED.entries()) {
+      await ctx.db.insert("messages", {
+        userId,
+        direction: "inbound",
+        fromAddress: declined.fromAddress,
+        toAddress: GUEST_ADDRESS,
+        subject: declined.subject,
+        text: declined.text,
+        providerMessageId: `example-${userId}-declined-${index}`,
+        ingestOutcome: "declined",
+        ingestReason: declined.reason,
+        demoKey: `demo-declined-${index}`,
+        at: now - declined.daysAgo * DAY,
+      });
     }
 
     return { seeded: true };

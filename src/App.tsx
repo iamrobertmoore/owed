@@ -172,10 +172,22 @@ function looksLikeClaimId(key: string): boolean {
   return /^[a-z0-9]{20,}$/.test(key);
 }
 
+/**
+ * A raw `From` header reads `Name <address@host>`. The address is the part
+ * that says where the message actually came from, so that is the part worth
+ * showing: a message arriving from a mail provider nobody has heard of is the
+ * evidence that the round trip is real rather than staged.
+ */
+function senderOf(from: string): string {
+  const angled = from.match(/<([^>]+)>/);
+  return (angled ? angled[1] : from).trim();
+}
+
 function Ledger() {
   const { signOut } = useAuthActions();
   const ledger = useQuery(api.claims.ledger);
   const records = useQuery(api.records.list);
+  const arrivals = useQuery(api.messages.list);
   const spend = useQuery(api.claims.spend);
   const inbox = useQuery(api.inboxes.mine);
   const provision = useAction(api.inboxes.provision);
@@ -338,7 +350,102 @@ function Ledger() {
 
       <AddressPanel address={inbox?.address} shared={inbox?.shared} error={addressError} />
 
+      {/*
+        What has arrived, and what the reader made of it.
+
+        This is the surface the product's whole argument rests on, and until now
+        it lived in a provider's console rather than in the app. A message that
+        arrived and was declined left no trace anywhere, so "the agent read it
+        and said no" was indistinguishable from "the post is broken", and those
+        want opposite responses.
+
+        The chip is the decision. The line under it is the reader's own reason,
+        kept in its own words rather than summarised, because a summary is the
+        thing this product exists to avoid.
+      */}
       <section>
+        <div className="section-head">
+          <h2>Arrivals</h2>
+          <span className="count">
+            {!arrivals
+              ? "checking"
+              : arrivals.length === 0
+                ? "nothing yet"
+                : `${arrivals.length} message${arrivals.length === 1 ? "" : "s"}`}
+          </span>
+        </div>
+
+        {!arrivals ? (
+          <div className="loading">Checking the post...</div>
+        ) : arrivals.length === 0 ? (
+          <div className="empty">
+            <strong>Nothing has arrived yet.</strong>
+            Forward an order confirmation, a booking or a renewal notice to the address above.
+            It appears here with what the agent decided about it, including when the decision
+            is to keep nothing.
+            <div style={{ marginTop: 12, fontSize: 13.5 }}>
+              A message that was read and turned down is shown, not hidden. It is the only way
+              to tell a refusal from a delivery that never came.
+            </div>
+          </div>
+        ) : (
+          <div className="rows">
+            {arrivals.map((m) => {
+              const kept = m.outcome === "kept";
+              const claimId = m.claimId;
+              const body = (
+                <>
+                  <span className={`dot ${kept ? "recovered" : "quiet"}`} />
+                  <span>
+                    <span className="title">
+                      {m.subject || "(no subject)"}
+                      {m.fromExample ? <span className="chip">worked example</span> : null}
+                    </span>
+                    <span className="meta">
+                      <span>{senderOf(m.fromAddress)}</span>
+                      <span>·</span>
+                      <span>{ago(m.at)}</span>
+                      {m.claimTitle ? (
+                        <>
+                          <span>·</span>
+                          <span>{m.claimTitle}</span>
+                        </>
+                      ) : null}
+                    </span>
+                    {m.reason ? (
+                      <span className="reason">
+                        <span className="who">Reader</span>
+                        <span className="said">{m.reason}</span>
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className={`pill ${kept ? "recovered" : ""}`}>
+                    {m.outcome === null
+                      ? "no decision recorded"
+                      : kept
+                        ? "became a record"
+                        : "not kept"}
+                  </span>
+                </>
+              );
+
+              // Clickable only when there is somewhere to go. A row that looks
+              // like a button and does nothing is worse than a plain one.
+              return claimId ? (
+                <button key={m._id} className="row" onClick={() => open(claimId)} type="button">
+                  {body}
+                </button>
+              ) : (
+                <div key={m._id} className="row" style={{ cursor: "default" }}>
+                  {body}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      <section style={{ marginTop: 48 }}>
         <div className="section-head">
           <h2>Claims</h2>
           <span className="count">

@@ -17,6 +17,7 @@ import type * as example from "../example.js";
 import type * as http from "../http.js";
 import type * as inboxes from "../inboxes.js";
 import type * as letters from "../letters.js";
+import type * as messages from "../messages.js";
 import type * as policies from "../policies.js";
 import type * as pricing from "../pricing.js";
 import type * as records from "../records.js";
@@ -39,6 +40,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   inboxes: typeof inboxes;
   letters: typeof letters;
+  messages: typeof messages;
   policies: typeof policies;
   pricing: typeof pricing;
   records: typeof records;

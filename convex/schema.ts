@@ -233,6 +233,24 @@ export default defineSchema({
     classification: v.optional(CLASSIFICATION),
     /** What the counterparty actually committed to, quoted. */
     commitment: v.optional(v.string()),
+    /**
+     * What the reader decided about this message, if it was handed to the
+     * reader at all. Stored rather than returned, because the reason is the
+     * only thing that lets an owner tell "read and declined" from "never
+     * arrived", and those two want opposite responses.
+     */
+    ingestOutcome: v.optional(v.union(v.literal("kept"), v.literal("declined"))),
+    ingestReason: v.optional(v.string()),
+    /** The record this message became, when it became one. */
+    recordId: v.optional(v.id("records")),
+    /**
+     * Set on the worked example's rows only, the same way `claims` marks its
+     * own. The arrivals list has to be able to say which messages are
+     * reconstructed, because a message that arrived and was turned down is
+     * indistinguishable on screen from one that was turned down by the agent,
+     * and the first is a demonstration while the second is a fact.
+     */
+    demoKey: v.optional(v.string()),
     at: v.number(),
   })
     .index("by_user", ["userId"])

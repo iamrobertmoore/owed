@@ -300,6 +300,41 @@ body::before {
   color: var(--owed);
 }
 
+/*
+  The reader's own words about a message, quoted rather than summarised. It
+  sits under the meta line and is deliberately quieter than the decision it
+  explains: the chip is the headline, the reasoning is the receipt.
+
+  Two columns rather than one, because the label is a fixed width and the
+  reason is not. Left to wrap on its own the second line slides back under
+  "READER" and the paragraph loses its left edge, which reads as a mistake.
+  A grid column holds the indent whatever the label says.
+*/
+.row .reason {
+  display: grid;
+  grid-template-columns: 58px 1fr;
+  column-gap: 8px;
+  align-items: baseline;
+  margin-top: 7px;
+  max-width: 68ch;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.row .reason .who {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+/* The outcome chip is a sentence, not a state, so it must not wrap mid-phrase. */
+.row > .pill {
+  white-space: nowrap;
+}
+
 /* A row whose state just changed gets one slow pulse, then settles. */
 .row.pulse {
   animation: pulse 1200ms ease-out 1;
