@@ -7,3 +7,18 @@ dist/
 *.local
 .DS_Store
 *.tsbuildinfo
+
+# Convex's own agent tooling. `npx convex dev` installs this through
+# `convex ai-files install` and rewrites it on every run, so committing it would
+# churn the log and bury the product under a vendor skill catalogue.
+#
+# The `.agents/skills/` entries below this are the ones this project curates for
+# itself, and they stay tracked.
+.claude/
+AGENTS.md
+CLAUDE.md
+skills-lock.json
+convex/_generated/ai/
+.agents/skills/convex/
+.agents/skills/convex-*/
+!.agents/skills/convex-hackathon-skill/
