@@ -450,10 +450,42 @@ export const list = query({
       .query("records")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .collect();
+
+    /*
+      Provenance is read from the claim as well as from the record.
+
+      `records.demoKey` was added after the worked example had already been
+      seeded into live ledgers, and `example.seedForUser` returns early once a
+      ledger holds claims ("Already has claims"). So every ledger seeded before
+      that field existed keeps records carrying no `demoKey` at all, and a count
+      taken from the field alone reads those rows as real paper: the page
+      announces "all from real mail" over four fictional orders.
+
+      The claim found from a record carries its own marker and always did, so a
+      record is example paper when either it or its claim says so. This is the
+      rule `messages.list` already applies to the arrivals list, which is why
+      that list never had this bug. Deriving it here rather than backfilling
+      means no migration and no ledger left behind.
+    */
+    const claims = await ctx.db
+      .query("claims")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+    const claimByRecord = new Map<string, (typeof claims)[number]>();
+    for (const claim of claims) {
+      if (claim.recordId) claimByRecord.set(claim.recordId as string, claim);
+    }
+
     const withNames = await Promise.all(
       rows.map(async (record) => {
         const counterparty = await ctx.db.get(record.counterpartyId);
-        return { ...record, counterpartyName: counterparty?.name ?? "Unknown" };
+        return {
+          ...record,
+          counterpartyName: counterparty?.name ?? "Unknown",
+          fromExample:
+            record.demoKey !== undefined ||
+            claimByRecord.get(record._id as string)?.demoKey !== undefined,
+        };
       }),
     );
     return withNames.sort((a, b) => b.occurredAt - a.occurredAt);

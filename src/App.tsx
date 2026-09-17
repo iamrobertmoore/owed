@@ -305,7 +305,10 @@ function Ledger() {
   const arrivalRows = arrivals?.length ?? 0;
 
   const exampleClaims = claims.filter((c) => c.demoKey !== undefined).length;
-  const exampleRecords = (records ?? []).filter((r) => r.demoKey !== undefined).length;
+  // From the read, not from the record's own field: a ledger seeded before
+  // `records.demoKey` existed has example rows with no marker on the row
+  // itself, and only the claim they were found from still says what they are.
+  const exampleRecords = (records ?? []).filter((r) => r.fromExample).length;
   const exampleArrivals = (arrivals ?? []).filter((m) => m.fromExample).length;
 
   const isExample = exampleClaims > 0 || exampleRecords > 0 || exampleArrivals > 0;
@@ -609,7 +612,7 @@ function Ledger() {
                 <span className="dot quiet" />
                 <span>
                   <span className="title">{record.description}</span>
-                  {record.demoKey ? <span className="chip">worked example</span> : null}
+                  {record.fromExample ? <span className="chip">worked example</span> : null}
                   <span className="meta">
                     <span>{kindLabel(record.kind)}</span>
                     <span>·</span>
