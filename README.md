@@ -28,12 +28,20 @@ Press **Continue as a guest** on the live URL and the ledger arrives already hol
 
 | Try this | Watch what happens |
 |---|---|
-| [The claim it found](https://fantastic-hamster-482.convex.site#claim=demo-found) | A forwarded confirmation became a record, the retailer's own returns page was read, and a clause promising a full refund on damaged goods was quoted back by its reference. Nobody described a dispute, and it settled: the money at the top of the ledger is what came back in writing. |
+| [The claim it found](https://fantastic-hamster-482.convex.site#claim=demo-found) | Two forwarded emails became one record: the order confirmation, and the damage report that followed it. The retailer's own returns page was read, the clause promising a full refund on damaged goods was found, and it was quoted back by its reference. Nobody had to know that clause was there, and it settled: the money at the top of the ledger is what came back in writing. |
 | [The polite nothing](https://fantastic-hamster-482.convex.site#claim=demo-polite) | An apology arrives with no decision behind it. It is read as an acknowledgement, not a concession, so the claim stays open. The agent does not declare victory on a kind sentence. |
 | [The silence that escalated](https://fantastic-hamster-482.convex.site#claim=demo-silent) | No reply inside the window the company itself publishes. The sweep moves the claim up a rung and drafts a different letter. Silence is not agreement, and the ledger says so. |
 | [The letter waiting on you](https://fantastic-hamster-482.convex.site#claim=demo-gate) | A drafted letter that cites clause 11.3 and answers the clause 11.4 exclusion before they raise it. Nothing leaves the outbox until you press send, and on the example pressing it writes to the timeline that nothing was transmitted rather than emailing anyone. |
 
-## £71.2 billion a year is not recovered
+### The two that were real
+
+The four cases above are reconstructed, and the page says so everywhere they appear. Two emails were not.
+
+I forwarded two real emails to my own agent address: an order confirmation from a bike shop, and a refund notification from a booking platform. It kept the first as a record, with the price, the reference and the counterparty. It read the second and turned it down in a sentence, because the refund had already been paid and there was nothing left to hold anyone to.
+
+Both decisions are on my own ledger, in the agent's own words, and **you cannot see that ledger.** That is not a gap, it is the rule the product runs on: every read re-checks the account that owns the row, so a visitor sees their own ledger and nobody else's, and a judge who signs in gets their own copy of the four cases above.
+
+## £71.2 billion is not recovered
 
 That is the UK government's own figure. The Department for Business and Trade published the **Consumer Detriment Survey 2024** on 27 March 2025: **£71.2 billion of net consumer detriment** in the twelve months to April and May 2024. Net means after everything people did manage to get back. It is what was lost and stayed lost.
 
@@ -42,7 +50,7 @@ Behind it, in the same survey:
 - **38.5 million UK consumers affected, 72% of UK adults**, across 294.9 million problems.
 - **22% of those problems saw no action taken at all**, roughly 65 million of them. Not a complaint that failed, no complaint.
 - **In 15% of cases where a refund was requested, no refund was given at all.**
-- **In 25% of incidents the seller did nothing at all**, setting aside those where an apology or an explanation was the whole of the response.
+- **In 25% of incidents the seller took no action at all**, a figure that includes the incidents the consumer never raised.
 - **47% of 18 to 29 year olds who experienced detriment** did not act on at least one incident, the highest of any age group.
 
 The barrier is not that people do not know they were wronged. It is that pursuing it costs an evening, and the amount is usually £40. Owed moves that evening onto something that already has the paperwork and does not get bored.
@@ -82,7 +90,6 @@ No OpenAI credits came with the event, so spend is real money and I treated it t
 | Scheduling | A thirty-minute cron sweep, plus scheduled functions for each next step and for drafting |
 | Auth | Convex Auth, with a password provider and an anonymous one so the deployed app is usable in one click |
 | Components | `@agentmail/convex` for the address, `@firecrawl/firecrawl-convex` for the terms, `@convex-dev/static-hosting` for this page |
-| Storage | File storage for evidence attached to a claim |
 
 Two rules the code enforces rather than describes. The sweep never sends, only drafts. And a claim is only ever settled by a `concession`, so the number at the top of the ledger is money that actually came back.
 
