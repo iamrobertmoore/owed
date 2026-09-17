@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-16T07:50:55Z
-- **Last updated:** 2026-09-17T16:57:21Z
+- **Last updated:** 2026-09-17T18:48:11Z
 
 ## Log
 
@@ -523,3 +523,103 @@ afternoon. Every claim in the problem section now traces to a page of the report
 and the brief says which page and invites the reviewer to try to falsify the
 tracing.
 
+
+### 2026-09-17 - 42b1fb4
+
+**An adversarial review was run against this entry with winning as its target, and four of what it
+found were fatal.** Every finding was reproduced before anything was changed, and the four have one
+shape between them: a claim on a judged surface that the artefact behind it did not support. This log
+has recorded that failure before in other costumes. What is new is that the entry's own argument made
+it findable.
+
+**The judged URL was serving the personal address this log said had been caught.** `vite.config.ts`
+had `sourcemap: true`, and a Vite sourcemap carries `sourcesContent`, which is the whole of `src/` as
+text. Static hosting serves it from the same public root as the app, so the map was not a debugging
+aid that happened to be reachable. It was the source, published, at a path guessable from the bundle's
+own name. It had been built from the tree before the commit that removed a personal address from
+`src/App.tsx`, and the entry for 0fdd3c7 records that removal as a sweep working. Both statements were
+true and the artefact disagreed with the log, which is the same defect as a stale figure: one surface
+current, another judged, and the judged one wrong. Reproduced by curl, which returned the address out
+of a 1.3 MB map at HTTP 200. `sourcemap` is off, the build ships no map, and the deploy that published
+this entry cleaned the old asset off the deployment. The same curl answers 404 now.
+
+**Three of the four worked-example claims showed a detection the code cannot make.** `detect` reads a
+record and the counterparty's provisions and nothing else, and it is instructed not to invent a fact.
+Three cases had no arrival stating the condition, so the record asserted something no message carried,
+and the timeline then answered "how did it know?" in the agent's own words over a ledger that never
+said it. Each case now carries the second arrival that states the problem, in the shape that post
+actually takes: a damage report on the order, a note that the deposit is still held, a cancellation
+notice. The fourth keeps none because its first arrival already carries the condition. A visitor
+reading the arrival and then the sheet can follow the claim back to the paper it came from, which is
+the one thing the worked example exists to show.
+
+**The two real emails were on two ledgers and reachable by nobody.** The submission text, the video
+description and the correction box in my own notes all said both decisions could be checked on the
+ledger. They cannot. Both were forwarded to guest aliases, and a guest is a fresh anonymous user
+on each press, so every read is scoped to a user no judge can become. Measured rather than assumed: a
+new guest's `messages:list` returned five rows and all five were the worked example, and the two real
+messages sit under two different user ids, one holding the bike shop's order marked kept and the other
+the booking platform's refund marked declined. All three surfaces now say where the two emails are and
+why nobody else can read them, and the README gained the paragraph it was missing. The scoping is not
+a gap to apologise for. It is the rule the product runs on, and the review tried to break it from a
+second guest session and could not.
+
+**The 25% cited the wrong figure and carried the wrong caveat, and that was this log's own doing.** The
+claim that in 25% of incidents the seller did nothing reads 25% in two places in the survey, and the
+pass recorded above pinned it to Figure 25. It is Figure 24. Worse than the wrong number was the
+caveat. The exclusion attached to it, "setting aside those where an apology or an explanation was the
+whole of the response", belongs to Figure 25's base, and the caveat the source actually makes for
+Figure 24 is the opposite kind: the figure "includes instances where consumers did not act on their
+detriment experience". The sentence dropped the qualification that mattered and borrowed one that did
+not apply, which made a narrower claim read stronger and put it directly above the 22% bullet the
+source says is partly the same set of incidents. My own notes had it right and the correction
+pass replaced it with the wrong one. Both surfaces carry the source's own caveat now, and the entry
+above says what it got wrong rather than being quietly rewritten.
+
+**A reply had never reached the claim it belonged to, and could not have.** `letters.send` sent from
+the shared inbox with no `replyTo`, so a counterparty's reply came back to the bare shared address.
+`onMessageReceived` looked that address up in `inboxes`, found no row, and returned before it checked
+the `claim-<id>` label the letter had carried out. Every reply this product was ever sent was dropped,
+silently. That is why the inbound half looked proven for as long as it did: the inbound half is the
+half that worked, and the outbound half had never had an answer to route. The label is resolved before
+giving up now, `replyTo` is set so the ordinary address path works too, and the label is a safety net
+rather than the only route home.
+
+**A public query answered a caller with no identity.** `policies:forCounterparty` took a
+`counterpartyId` and returned that company's provisions with no auth check, and nothing called it.
+Called without a token it returned another user's provisions, which falsifies the sentence in the
+submission that every read re-checks the caller. It is internal now, and the public path answers a
+server error rather than data. Two smaller reads went the same way. The raw `To` field was cast with
+`String()`, so a forward carrying two recipients produced a string that matched no inbox and was
+dropped silently. And `records.list` returned an empty array for a signed-out caller where every other
+read returns null. An empty array is not a neutral default: it tells a client that has not said who it
+is that this person has no records.
+
+**A judge could reach the claim sheet without passing the note that says what it is.** Every README
+link opens the sheet directly, and the sheet never read `demoKey`, so the one screen a visitor lands on
+had no worked-example label while the ledger behind it had four. One chip next to the stage pill. The
+same pass found the reverse error: provenance was computed over the claims alone, so a real account
+that loaded the example was told its figures were the worked example and its real order was labelled
+as the example. Labelling from one surface and asserting it over three is the same mistake in both
+directions.
+
+**Three log fields disagreed with the repository, and two sentences pointed at themselves.** `Started`
+was the date the working tree was made rather than the first commit, the first entry was labelled
+`working tree` for work that was committed, and one entry was headed `verified`, which is not a commit.
+They are real commits now, and `Components` no longer lists `@convex-dev/auth`, which is an auth
+provider rather than a component this app mounts. Separately, two comparative sentences about other
+products had come out of the README in the statistics pass, and this log pointed at them without
+quoting them. A pointer sends a reader to the commit that holds them, and that commit is on the public
+remote either way, so they are named above now with why they were wrong. A claim about somebody else's
+product is the one claim a judge can check without reading this code, and a single counterexample
+makes it false.
+
+**What is still outstanding, and it is not all mine to do.** The demo state needs one real
+problem-bearing forward from a second address, so the recording has an unlabelled row beside the
+example, and the two real emails need forwarding once more to the account the video is recorded on so
+that one screen holds both. The script now says which case is the worked example and which is live,
+because the review found that its reply beat promised a received reply that cannot exist in a session:
+the demo counterparty publishes no terms, so it cannot produce a claim for the agent to write to, and
+a real reply takes weeks. The four fatal findings were all in the seam between what the product does
+and what the entry said about it. The review could not break the scoping, the approval gate, the
+webhook signature check or the arithmetic, and those are where the findings were not.
