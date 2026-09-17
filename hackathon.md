@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-16T07:50:55Z
-- **Last updated:** 2026-09-17T18:54:53Z
+- **Last updated:** 2026-09-17T19:47:34Z
 
 ## Log
 
@@ -638,3 +638,24 @@ records, all from real mail" is a sentence about nothing.
 count. The two-way branch underneath the replacement was mine, and it would have shipped. This log has
 the rule already: a fix is a claim, and it gets the same reading as the thing it replaced. Reading the
 rendered branch is what caught it, and that is the method that has worked every time here.
+
+### 2026-09-17 - 687c170
+
+**A claim-consistency sweep found three claims the correction pass had left behind, in files it had
+not listed.** Every file that was corrected was correct. The survivors were in the ones nobody
+thought to name, which is the failure the sweep exists to catch: `docs/architecture.svg` still claimed
+file storage after the word had come out of the README and this log, `index.html`'s `og:description`
+still read "£71.2 billion a year" on the line a link preview shows, and both copies of the README
+banner still read "lost in the UK last year". Two of those were live on the deployment.
+
+**The lesson is about where the check looks, not about care.** The README heading, the video
+description and this log were fixed by hand and were all right. The meta tag, the diagram and the
+banner were fixed by nobody, because none of them reads like a document. The sweep's `stale_scope`
+reads `git ls-files`, so it checks every tracked file rather than the list someone wrote down, and
+that is what found them. The sweep's spec gates its `stale` list on those three strings, and each of
+the three was reintroduced into a tracked file to prove the check fails when the claim is back rather
+than merely passing when it is gone.
+
+**A copy with no build step is a trap in both directions.** `docs/brand/readme-banner.svg` and
+`public/readme-banner.svg` are byte-identical and nothing keeps them in sync. Fixing the first left
+the second, and the second is the one the site serves. They are identical again.
