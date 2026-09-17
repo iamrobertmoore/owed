@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-15T17:01:13Z
-- **Last updated:** 2026-09-17T16:25:38Z
+- **Last updated:** 2026-09-17T16:57:21Z
 
 ## Log
 
@@ -471,4 +471,44 @@ point at the judged backend.
 identifiers before committing caught the owner's own mail address, used as an example
 of a raw `From` header in `src/App.tsx`, in a file that becomes public. Replaced with
 a generic form.
+
+### 2026-09-17 - e8989fe
+
+**Every problem statistic was re-derived from the source, and three were missing
+their base.** The figures come from the Department for Business and Trade's Consumer
+Detriment Survey 2024, and they had been carried in this log and the README from my
+own notes rather than read out of the report. Read out of the report they are still
+the government's numbers, but three of them are measured against a narrower
+population than the sentence implied. 72% is of UK adults, not of all consumers. 47%
+is of 18 to 29 year olds who experienced detriment, not of the age band, and that
+band is the one whose inaction is the reason this product exists, so the base matters
+more there than anywhere else in the list. And the refund figure is 15% of cases
+where a refund was requested, not 15% of refund requests, which is the source's own
+wording and is now the README's. The argument did not change; it was resting on a
+base it had not stated.
+
+**A true claim can be made false by citing the right number from the wrong table.**
+The claim that in 25% of incidents the seller did nothing at all reads 25% in two
+places in the survey. In Figure 25 it is the bar labelled `None`, the share of
+incidents where the seller took no action, and that is what the sentence says. In
+Table 8 the same 25% is the share of one subgroup reporting a negative effect on
+their mental health, which has nothing to do with the seller. Both numbers are real
+and only one supports the sentence, so the citation is pinned to Figure 25 and the
+README now says which cases the figure sets aside.
+
+**Two comparative sentences came out of the README, and the reason is not modesty.**
+They claimed what other products do. They are not repeated here, because repeating
+them would re-publish the claim in the one document judges are told to read. A claim
+about someone else's product is the one claim a judge can check without reading my
+code, a single counterexample makes it false, and making it at all tells a judge I
+went through the other entrants. The replacements say what Owed does instead: it
+holds the paper trail, so it notices a claim rather than waiting to be told about
+one. The same claim in the submission form came out in the same pass.
+
+**The statistics were checked before the review rather than by it.** An adversarial
+review is about to run against this entry with winning as its target, and it should
+spend its budget on things I cannot see rather than on figures I can check in an
+afternoon. Every claim in the problem section now traces to a page of the report,
+and the brief says which page and invites the reviewer to try to falsify the
+tracing.
 
