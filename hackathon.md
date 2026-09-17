@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-16T07:50:55Z
-- **Last updated:** 2026-09-17T19:47:34Z
+- **Last updated:** 2026-09-17T22:06:10Z
 
 ## Log
 
@@ -541,7 +541,7 @@ own name. It had been built from the tree before the commit that removed a perso
 true and the artefact disagreed with the log, which is the same defect as a stale figure: one surface
 current, another judged, and the judged one wrong. Reproduced by curl, which returned the address out
 of a 1.3 MB map at HTTP 200. `sourcemap` is off, the build ships no map, and the deploy that published
-this entry cleaned the old asset off the deployment. The same curl answers 404 now.
+this entry cleaned the old asset off the deployment. The same curl answers 404 at the origin.
 
 **Three of the four worked-example claims showed a detection the code cannot make.** `detect` reads a
 record and the counterparty's provisions and nothing else, and it is instructed not to invent a fact.
@@ -659,3 +659,56 @@ than merely passing when it is gone.
 **A copy with no build step is a trap in both directions.** `docs/brand/readme-banner.svg` and
 `public/readme-banner.svg` are byte-identical and nothing keeps them in sync. Fixing the first left
 the second, and the second is the one the site serves. They are identical again.
+
+### 2026-09-17 - a4b5902
+
+**The provenance fix was right about the field and wrong about the ledgers already in the database, and
+the failure was the mirror image of the one it replaced.** `records.demoKey` did not exist before
+`a5fe331`, and `example.seedForUser` returns early once a ledger holds claims, so every ledger seeded
+before that field existed keeps records carrying no marker at all. A count taken from the field alone
+then reads them as real paper: eight live ledgers announced "all from real mail" over four fictional
+`.example` orders, including this session's own recording ledger, which holds one real order beside the
+four example rows and read "5 records, all from real mail". The arrivals list never had the bug, because
+it derives provenance from the linked claim as well as from the message itself. `records.list` applies
+the same rule now, and the chip on each row reads the derived field rather than the raw one, so no ledger
+needs a backfill (`convex/records.ts`, `src/App.tsx`, `31335cd`).
+
+**It was reproduced on the deployment before anything was touched.** Reading the tables rather than the
+source: 33 of 69 records carry no `demoKey`, and 32 of those 33 are linked to a claim that does. That
+predicate is the defect, and it is the same one the review observed by hand in a browser.
+
+**The consistency sweep's stale list is hand-written, so it can only find strings someone thought to
+list, and four survivors were in a tree it never read.** Its scope was the tracked repo, and my own notes
+are gitignored, so those documents were only ever checked against the ten strings in the spec. Three of
+the four ship: the submission form's Video demo field still promised a real reply arriving at the agent's
+address, two documents still called the demo counterparty a second address, and the video script still
+had pre-example prep text claiming the three claims were real. The fourth was the post-recording step,
+which told the reader to reply to a claim that never sent. Those files are in the sweep's scope now and
+the four strings are in its spec, so the next pass reads them instead of a list.
+
+**Beat 5 asserted that a reply had landed and then retracted it two sentences later.** It opens with the
+worked example now, which is what it was always showing, so there is nothing left to retract. The script
+also gained the line it was missing: the prep asks for a problem-bearing forward from a real company, and
+if the sitemap reader finds that company's terms the detector will draft a live letter to a real named
+business. The narration already said not to send the example's letter. It says the same about that one
+now, because the instruction two beats earlier is to press approve.
+
+**The word count moved with the rewrite and it is a checked claim.** Beat 5 went from 93 words to 83, the
+total from 369 to 359, and the DROP 2 branch from 325 to 315. Counted from the file's own blockquotes
+rather than added by hand, and the spec's required list moved with it.
+
+**One line of the README described a product that does not exist yet.** "Real claims run on real
+forwarded mail" reads as though real claims exist. Production has detected none, and the two emails on
+the guest ledgers are the only real paper in the product. It says "would run" now, and says how many there
+are (`README.md`, `a4b5902`).
+
+**The sourcemap entry claimed more than it had measured, and the gap was between the origin and the
+edge.** An adversarial re-check found the old bundle still answering 200 from Cloudflare four and a half
+hours after the redeploy, with a one-year `max-age` on the origin header and a cache hit at the edge. A
+deploy replaces what the origin serves and does not purge an edge, so "the deploy cleaned the old asset
+off the deployment" was true of one and not the other, and that sentence has been narrowed to say origin.
+Re-measured while writing this entry: that path answers 404 at the edge too, from a cached 404 with a four
+hour TTL, and the live bundle answers 200 at 324,925 bytes with no occurrence of the address. The map was
+never cached at all, which is why the exposure was never real: the address lived in the map. The caution
+survives the correction, because the edge dropped that entry on its own timer rather than because
+anything asked it to.
