@@ -170,12 +170,23 @@ which applies when (`convex/inboxes.ts`).
 The failure that mattered was the one past the last address. `createInbox`
 throws, and that was reaching the owner as an error trace on the one screen a
 judge is most likely to be looking at. It now returns a sentence naming the
-cause. The match is broad on purpose: Convex does not promise to carry custom
-properties on an error across a component boundary, so the 403 status and the
-`limit_exceeded` code are both tested for, and an unrecognised failure is
-reported as itself rather than assumed to be a limit. Guessing the cause of an
-unknown error would be the same mistake this log keeps recording, a claim that
-cannot be false.
+cause. Convex does not promise to carry custom properties on an error across a
+component boundary, so the message and the body are both read. An unrecognised
+failure is reported as itself rather than assumed to be a limit: guessing the
+cause of an unknown error would be the same mistake this log keeps recording, a
+claim that cannot be false.
+
+That last sentence was not true of the code until 17 September. The first
+version tested for the 403 status alongside the code, and every 403 body carries
+`"code": 403`, so a refused credential matched the limit branch as readily as a
+spent allowance. The owner was told the addresses had run out when the real
+fault was the key, which is the exact false statement the paragraph above
+promises to avoid. It was found by measuring rather than reading: `POST
+/v0/inboxes` with the deployment's key answers `missing_permission`, and that
+body matches the old regex. The code now branches on the provider's stable code
+alone, which is what AgentMail's own schema asks for ("Branch on this rather
+than the message text"), and a refused credential gets its own sentence instead
+of borrowing the capacity one.
 
 Checked that the component throws before writing the catch rather than after.
 `agentmailFetch` raises `AgentMailApiError` on any non-2xx

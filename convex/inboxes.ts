@@ -127,17 +127,31 @@ export const provision = action({
       // The provider answers a request past the allowance with HTTP 403 and a
       // body naming `limit_exceeded`. Convex does not promise to carry custom
       // properties on an error across a component boundary, so match on
-      // everything that might survive rather than on `.body` alone. Anything
-      // else is reported as itself: calling an unknown failure a limit would
-      // be a false statement about the cause.
+      // everything that might survive rather than on `.body` alone.
+      //
+      // Branch on the provider's stable code, never on the status. Every 403
+      // body carries `"code": 403`, so a regex containing the status matches a
+      // refused credential as readily as a spent allowance, and the owner is
+      // told the addresses ran out when the real fault is the key. AgentMail's
+      // own schema says of the code: "Branch on this rather than the message
+      // text." Anything else is reported as itself: calling an unknown failure
+      // a limit would be a false statement about the cause.
       const detail = [
         err instanceof Error ? err.message : String(err),
         (err as { body?: string } | null)?.body ?? "",
       ].join(" ");
-      if (/limit_exceeded|Inbox limit|403/.test(detail)) {
+      if (/limit_exceeded|Inbox limit/.test(detail)) {
         return {
           error:
             "This deployment has no email address left to hand out. The free plan caps how many inboxes one account can hold, and they are all in use. You can still load the worked example below, and every claim in it behaves the same way.",
+        };
+      }
+      // A refused credential is a deployment fault, not a capacity one, and
+      // the two want opposite responses.
+      if (/missing_permission/.test(detail)) {
+        return {
+          error:
+            "This deployment's email credential was refused, so no address could be created. The worked example below is unaffected and every claim in it still behaves the same way.",
         };
       }
       return { error: `Could not create an address. ${detail.slice(0, 160)}` };
