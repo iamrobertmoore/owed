@@ -140,8 +140,8 @@ export default defineSchema({
 
   /**
    * The paper trail. What was bought, from whom, on what terms, and when it
-   * was due. This is the part the field's other entries do not hold, and it
-   * is the reason this agent can find a claim rather than wait to be told.
+   * was due. Holding this is what lets the agent find a claim rather than wait
+   * to be told about one.
    */
   records: defineTable({
     userId: v.id("users"),

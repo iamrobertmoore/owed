@@ -12,7 +12,7 @@
 
 <p align="center"><a href="https://fantastic-hamster-482.convex.site">Open the ledger</a> · <a href="https://fantastic-hamster-482.convex.site#claim=demo-found">Read a claim it found</a> · <a href="https://fantastic-hamster-482.convex.site#claim=demo-polite">See an apology settle nothing</a></p>
 
-Every other tool waits for you to describe a dispute. Owed is holding the paper trail, so it notices one.
+Owed holds the paper trail, so it notices a claim instead of waiting to be told about one.
 
 You forward what already lands in your inbox anyway: order confirmations, bookings, renewal notices. Owed reads the company's own published terms, works out what you are owed, writes the letter that cites the clause by its reference, and asks you before it sends anything.
 
@@ -39,11 +39,11 @@ That is the UK government's own figure. The Department for Business and Trade pu
 
 Behind it, in the same survey:
 
-- **38.5 million UK consumers affected, 72% of all consumers**, across 294.9 million problems.
+- **38.5 million UK consumers affected, 72% of UK adults**, across 294.9 million problems.
 - **22% of those problems saw no action taken at all**, roughly 65 million of them. Not a complaint that failed, no complaint.
-- **15% of refund requests were never paid.**
-- In 25% of the experiences reported, the seller did nothing at all.
-- **47% of 18 to 29 year olds** did not act on at least one incident, the highest of any age group.
+- **In 15% of cases where a refund was requested, no refund was given at all.**
+- **In 25% of incidents the seller did nothing at all**, setting aside those where an apology or an explanation was the whole of the response.
+- **47% of 18 to 29 year olds who experienced detriment** did not act on at least one incident, the highest of any age group.
 
 The barrier is not that people do not know they were wronged. It is that pursuing it costs an evening, and the amount is usually £40. Owed moves that evening onto something that already has the paperwork and does not get bored.
 
@@ -53,7 +53,7 @@ The barrier is not that people do not know they were wronged. It is that pursuin
 
 **Your agent has an address.** A real account gets an inbox of its own, created on first use. A guest gets an alias on the shared inbox, so it costs no allowance and mail sent to it still lands in that guest's ledger and nowhere else. Either way, mail arriving is verified and deduplicated by event id, then routed to the claim it belongs to. The plan allows three inboxes, which is why guests are routed through aliases rather than handed one each: provisioning one per visitor spent the allowance within the first few people to open the deployed app, and whoever arrived after the last slot got an error where an address should be. One of the three is the shared inbox the aliases sit on, so two accounts can hold an inbox of their own; past that the app returns a sentence explaining why rather than an error trace, and the guest button still shows the whole product. The agent never asks for a password to your real mailbox and never reads your life. It reads what you forward.
 
-**The paper trail is the part nobody else keeps.** Order confirmations, bookings, delivery promises and renewal notices become records: what was bought, from whom, and when it was due. This is what lets Owed find a claim instead of waiting for one.
+**The paper trail comes first.** Order confirmations, bookings, delivery promises and renewal notices become records: what was bought, from whom, and when it was due. Everything downstream is built on that, which is what lets Owed find a claim instead of waiting for one.
 
 **Claims are argued from the company's own words.** Firecrawl maps their site, picks out the terms, and mines them for provisions kept verbatim with the document's own reference number. Each one is embedded and stored in a filtered vector index, so a claim retrieves the clauses that bear on it. The letter cites the provision by reference and answers the exclusion they would rely on before they raise it.
 

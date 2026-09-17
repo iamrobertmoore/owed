@@ -9,10 +9,10 @@ import { MODEL } from "./pricing";
 /**
  * The paper trail.
  *
- * This is the part the rest of the field does not have. Every other entry waits
- * for a person to describe a dispute. Owed holds the record of what was bought,
- * from whom, on what terms and when it was due, which means it can notice that
- * something went wrong without being told.
+ * Owed holds the record of what was bought, from whom, on what terms and when
+ * it was due, which is what lets it notice that something went wrong without
+ * being told. A claim is argued from a record rather than from a description,
+ * so the record has to come first.
  *
  * A record is only ever created from a real message that arrived at the
  * agent's address. Nothing here invents a purchase.
