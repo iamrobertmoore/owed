@@ -167,7 +167,7 @@
 <!-- footer -->
 <rect class="card" x="72" y="640" width="1036" height="108" rx="14"/>
 <text class="foot-t" x="96" y="666">On Convex. Everything above runs here, and there is no server of mine to keep alive.</text>
-<text class="foot-b" x="96" y="690">A schema of nine tables and twenty indexes. A 1024-dimension vector index over the provisions, filtered by counterparty.</text>
+<text class="foot-b" x="96" y="690">A schema of nine tables and nineteen indexes. A 1024-dimension vector index over the provisions, filtered by counterparty.</text>
 <text class="foot-b" x="96" y="712">Queries, mutations and actions. An HTTP action for the signed webhook. A thirty-minute cron sweep. Scheduled functions for the next step.</text>
 <text class="foot-b" x="96" y="734">Convex Auth. Components: AgentMail for the address, Firecrawl for the terms, static hosting for this page.</text>
 </svg>
