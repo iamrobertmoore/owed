@@ -79,6 +79,14 @@ body::before {
   margin-bottom: 40px;
 }
 
+/* Two actions now sit on the right: the way to a real account, and the way
+   out. They keep their own row so space-between does not scatter them. */
+.masthead .actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .brand {
   display: flex;
   align-items: center;
