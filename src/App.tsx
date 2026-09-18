@@ -35,7 +35,7 @@ function Splash({ text }: { text: string }) {
 
 export default function App() {
   const { isLoading, isAuthenticated } = useConvexAuth();
-  const { signIn } = useAuthActions();
+  const { signIn, signOut } = useAuthActions();
   const [left, setLeft] = useState(false);
   const [failed, setFailed] = useState<string | null>(null);
   const tried = useRef(false);
@@ -64,7 +64,15 @@ export default function App() {
     signIn("anonymous").catch((e: unknown) => setFailed(friendlyAuthError(e)));
   }, [isLoading, isAuthenticated, signIn]);
 
-  /** Leave the guest session and show the card, in that order. */
+  /**
+   * Leave the guest session and show the card, in that order.
+   *
+   * The sign-out is not decoration. This component checks `isAuthenticated`
+   * before it checks `left`, so a guest session that is still live wins the
+   * render and the card never appears. Clearing the session is what makes the
+   * card reachable at all; setting the flag is what stops the effect above
+   * from minting a new guest on the way back in.
+   */
   function leave() {
     try {
       sessionStorage.setItem(LEFT_KEY, "1");
@@ -72,6 +80,7 @@ export default function App() {
       /* private mode; the card still shows for this page load */
     }
     setLeft(true);
+    void signOut();
   }
 
   if (isLoading) return <Splash text="Opening the ledger..." />;
@@ -247,7 +256,6 @@ function looksLikeClaimId(key: string): boolean {
  * name and still shows in full, which is the case the evidence was for.
  */
 function Ledger({ onLeave }: { onLeave: () => void }) {
-  const { signOut } = useAuthActions();
   const ledger = useQuery(api.claims.ledger);
   const records = useQuery(api.records.list);
   const arrivals = useQuery(api.messages.list);
@@ -396,17 +404,16 @@ function Ledger({ onLeave }: { onLeave: () => void }) {
           <span className="name">Owed</span>
         </div>
         <div className="actions">
+          {/*
+            Both actions end the guest session, because that is the only way
+            back to the card: `leave` sets the flag and signs out. The labels
+            differ because the visitor does. A guest is creating an account,
+            and an account holder is signing out of one.
+          */}
           <button className="act ghost" onClick={onLeave} type="button">
             Create an account
           </button>
-          <button
-            className="act ghost"
-            onClick={() => {
-              onLeave();
-              void signOut();
-            }}
-            type="button"
-          >
+          <button className="act ghost" onClick={onLeave} type="button">
             Sign out
           </button>
         </div>
