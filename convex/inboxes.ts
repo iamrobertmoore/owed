@@ -70,11 +70,11 @@ export const currentUser = internalQuery({
  * nothing; a real account gets an inbox of its own.
  *
  * The free plan allows three inboxes, so the third real account to sign in is
- * the last one who can be handed an inbox of their own. Past that the
- * provider refuses, and the refusal is returned as a sentence rather than
- * thrown: whoever arrives fourth should read why they have no address, not an
- * error trace. Guests are not subject to that ceiling, which is the point of
- * routing them through aliases.
+ * the last one who can be handed an inbox of their own. Past that the provider
+ * refuses, and the owner is handed the alias a guest would have got rather than
+ * a sentence about the refusal, so the panel shows an address that works either
+ * way. Guests are not subject to that ceiling, which is the point of routing
+ * them through aliases.
  */
 export const provision = action({
   args: {},
