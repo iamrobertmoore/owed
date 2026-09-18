@@ -4,6 +4,7 @@ import { internalAction, internalMutation, internalQuery, query } from "./_gener
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { contentKey } from "./ai";
+import { registrableDomain } from "./domains";
 import { MODEL } from "./pricing";
 
 /**
@@ -50,18 +51,25 @@ export const upsertCounterparty = internalMutation({
     domain: v.string(),
   },
   handler: async (ctx, args): Promise<Id<"counterparties">> => {
+    // The row is keyed on the company's own site, not the host its mail came
+    // from. Keying on the sender's host gave one company one row per subdomain
+    // it happens to send from, each with its own crawl, and the crawl was then
+    // pointed at a host that publishes nothing. The reader is still asked for
+    // the sender's domain; the reduction to the registrable domain happens
+    // here, in tested code, rather than being asked of the model.
+    const domain = registrableDomain(args.domain) || args.domain;
     const existing = await ctx.db
       .query("counterparties")
       .withIndex("by_user_and_domain", (q) =>
-        q.eq("userId", args.userId).eq("domain", args.domain),
+        q.eq("userId", args.userId).eq("domain", domain),
       )
       .unique();
     if (existing) return existing._id;
     return await ctx.db.insert("counterparties", {
       userId: args.userId,
       name: args.name,
-      domain: args.domain,
-      policyUrls: [`https://${args.domain}`],
+      domain,
+      policyUrls: [`https://${domain}`],
       crawlStatus: "pending",
     });
   },

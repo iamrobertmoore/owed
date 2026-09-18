@@ -14,6 +14,7 @@ import type * as aiCache from "../aiCache.js";
 import type * as auth from "../auth.js";
 import type * as claims from "../claims.js";
 import type * as crons from "../crons.js";
+import type * as domains from "../domains.js";
 import type * as example from "../example.js";
 import type * as http from "../http.js";
 import type * as inboxes from "../inboxes.js";
@@ -22,6 +23,7 @@ import type * as messages from "../messages.js";
 import type * as policies from "../policies.js";
 import type * as pricing from "../pricing.js";
 import type * as records from "../records.js";
+import type * as repair from "../repair.js";
 import type * as sweep from "../sweep.js";
 import type * as triage from "../triage.js";
 
@@ -38,6 +40,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   claims: typeof claims;
   crons: typeof crons;
+  domains: typeof domains;
   example: typeof example;
   http: typeof http;
   inboxes: typeof inboxes;
@@ -46,6 +49,7 @@ declare const fullApi: ApiFromModules<{
   policies: typeof policies;
   pricing: typeof pricing;
   records: typeof records;
+  repair: typeof repair;
   sweep: typeof sweep;
   triage: typeof triage;
 }>;

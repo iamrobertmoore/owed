@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { internalAction, internalMutation, internalQuery } from "./_generated/server";
 import { components, internal } from "./_generated/api";
 import { FirecrawlClient } from "@firecrawl/firecrawl-convex";
+import { originsFor } from "./domains";
 import type { Doc, Id } from "./_generated/dataModel";
 
 /**
@@ -309,55 +310,96 @@ export const readCounterparty = internalAction({
     });
     if (!cp) throw new Error(`No counterparty ${args.counterpartyId}`);
 
-    const origin = cp.policyUrls[0] ?? `https://${cp.domain}`;
+    // 1. Which host to read. The company's own site, not the host it happens to
+    //    send mail from. This is a measured defect rather than a precaution:
+    //    Spotify's price-change notice arrives from `legal.spotify.com` and
+    //    Ring's from `mail.ring.com`, and neither host serves a sitemap or a
+    //    policy page, so both crawls were marked `skipped` while the terms sat
+    //    on `spotify.com` and `ring.com` the whole time. Two of the eight real
+    //    forwards on this deployment produced no claim for that reason alone.
+    //    The registrable domain is tried first and the sending host second, so
+    //    the extra map call is only ever spent on an address that today returns
+    //    nothing at all.
+    const origins = [...new Set([...originsFor(cp.domain), ...(cp.policyUrls ?? [])])];
+    if (origins.length === 0) origins.push(`https://${cp.domain}`);
 
-    // 1. Find the candidate documents. Two independent sources, because either
+    // 2. Find the candidate documents. Two independent sources, because either
     //    can come up empty on a real site and the cost of missing the terms is
     //    the whole product. The sitemap is complete and costs no crawl credit;
     //    the mapper is capped, so on a large shop it can return nothing but
-    //    product pages.
-    const fromSitemap = await sitemapUrls(origin);
+    //    product pages. Both are tried on each host in turn, and the walk stops
+    //    at the first host that yields a policy-shaped URL.
+    const candidates: string[] = [];
+    const tried: string[] = [];
+    let origin = origins[0];
+    let chosen: string[] = [];
+    let sources = "";
+    let firstError: string | null = null;
 
-    let fromMap: string[] = [];
-    let mapError: string | null = null;
-    try {
-      const mapped = await firecrawl.map(ctx, origin, { limit: 200 });
-      fromMap = (mapped?.links ?? [])
-        .map((l) => (typeof l === "string" ? l : l?.url ?? ""))
-        .filter((u) => u.length > 0);
-    } catch (err) {
-      mapError = String(err).slice(0, 200);
+    for (let i = 0; i < origins.length; i++) {
+      const attempt = origins[i];
+      const host = attempt.replace(/^https?:\/\//, "");
+      const fromSitemap = await sitemapUrls(attempt);
+
+      let fromMap: string[] = [];
+      let attemptError: string | null = null;
+      try {
+        const mapped = await firecrawl.map(ctx, attempt, { limit: 200 });
+        fromMap = (mapped?.links ?? [])
+          .map((l) => (typeof l === "string" ? l : l?.url ?? ""))
+          .filter((u) => u.length > 0);
+      } catch (err) {
+        attemptError = String(err).slice(0, 200);
+      }
+      // The status reported when nothing is found describes the first host
+      // tried, which is the company's own site and therefore the attempt that
+      // settles the question. A sending host that fails to map does not make
+      // the crawl "failed": the company's own site was looked at, and it had
+      // nothing.
+      if (i === 0) firstError = attemptError;
+
+      tried.push(`${host} (sitemap ${fromSitemap.length}, mapper ${fromMap.length})`);
+      candidates.push(...fromSitemap, ...fromMap);
+      chosen = selectPolicyUrls([...new Set(candidates)]);
+      if (chosen.length > 0) {
+        origin = attempt;
+        sources = `sitemap ${fromSitemap.length}, mapper ${fromMap.length}`;
+        break;
+      }
     }
 
-    const candidates = [...new Set([...fromSitemap, ...fromMap])];
-    const sources = `sitemap ${fromSitemap.length}, mapper ${fromMap.length}`;
-    let chosen = selectPolicyUrls(candidates);
-
-    // 2. Neither source turned up a policy-shaped URL. Ask the mapper to search
-    //    for the vocabulary directly, which is the provider's own filter rather
-    //    than our guess at a path.
+    // 3. Neither source turned up a policy-shaped URL on any host. Ask the
+    //    mapper to search for the vocabulary directly, which is the provider's
+    //    own filter rather than our guess at a path.
     if (chosen.length === 0) {
-      for (const term of POLICY_SEARCHES) {
-        try {
-          const found = await firecrawl.map(ctx, origin, { search: term, limit: 10 });
-          for (const l of found?.links ?? []) {
-            const u = typeof l === "string" ? l : l?.url ?? "";
-            if (u) candidates.push(u);
+      for (const attempt of origins) {
+        for (const term of POLICY_SEARCHES) {
+          try {
+            const found = await firecrawl.map(ctx, attempt, { search: term, limit: 10 });
+            for (const l of found?.links ?? []) {
+              const u = typeof l === "string" ? l : l?.url ?? "";
+              if (u) candidates.push(u);
+            }
+          } catch {
+            // One failed search is not a reason to stop looking.
           }
-        } catch {
-          // One failed search is not a reason to stop looking.
+        }
+        chosen = selectPolicyUrls([...new Set(candidates)]);
+        if (chosen.length > 0) {
+          origin = attempt;
+          sources = "the mapper's own search";
+          break;
         }
       }
-      chosen = selectPolicyUrls([...new Set(candidates)]);
     }
 
     if (chosen.length === 0) {
       await ctx.runMutation(internal.policies.markCrawl, {
         counterpartyId: args.counterpartyId,
-        status: mapError ? "failed" : "skipped",
-        note: mapError
-          ? `Mapper failed (${mapError}); the sitemap listed ${fromSitemap.length} URLs and none looked like terms.`
-          : `Looked at ${candidates.length} URLs (${sources}), none looked like terms.`,
+        status: firstError ? "failed" : "skipped",
+        note: firstError
+          ? `Mapper failed on ${origins[0].replace(/^https?:\/\//, "")} (${firstError}); nothing on any host tried looked like terms.`
+          : `Looked at ${candidates.length} URLs on ${tried.join("; ")}, none looked like terms.`,
       });
       return { provisions: 0, documents: 0, note: "No terms document found." };
     }
@@ -391,7 +433,15 @@ export const readCounterparty = internalAction({
       counterpartyId: args.counterpartyId,
     });
 
+    // Which document produced what is recorded rather than only the total.
+    // Measured on this deployment: Evri's crawl reported `Read 6 documents,
+    // kept 0 citable provisions`, and the note could not say whether the terms
+    // page had been read and yielded nothing or had never been read at all.
+    // Their terms page does carry the provisions (18 mentions of liability, 14
+    // of compensation), so that note was hiding a real defect rather than
+    // reporting a company that publishes nothing.
     let total = 0;
+    const perDocument: string[] = [];
     for (const doc of documents) {
       const extracted = await ctx.runAction(internal.policies.mineProvisions, {
         counterpartyId: args.counterpartyId,
@@ -399,12 +449,13 @@ export const readCounterparty = internalAction({
         markdown: doc.markdown,
       });
       total += extracted;
+      perDocument.push(`${shortPath(doc.url)} ${extracted}`);
     }
 
     await ctx.runMutation(internal.policies.markCrawl, {
       counterpartyId: args.counterpartyId,
       status: "crawled",
-      note: `Read ${documents.length} documents, kept ${total} citable provisions. Found via ${sources}.`,
+      note: `Read ${documents.length} documents from ${origin.replace(/^https?:\/\//, "")} (${perDocument.join(", ")}), kept ${total} citable provisions. Found via ${sources}.`,
     });
 
     return {
@@ -493,6 +544,20 @@ function titleFor(url: string): string {
   try {
     const u = new URL(url);
     return u.pathname === "/" ? u.host : `${u.host}${u.pathname}`;
+  } catch {
+    return url;
+  }
+}
+
+/**
+ * The path of a document, without its host.
+ *
+ * The crawl note already names the host it read from, so repeating it six times
+ * in the list of documents would push the useful part off the end of a line.
+ */
+function shortPath(url: string): string {
+  try {
+    return new URL(url).pathname;
   } catch {
     return url;
   }
