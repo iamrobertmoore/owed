@@ -157,16 +157,79 @@ export const readCounterparty = internalAction({
     // 2. Read each one. A scrape failure on one document should not lose the
     //    others, so each is caught separately.
     const documents: Array<{ url: string; markdown: string }> = [];
-    for (const url of chosen) {
-      try {
-        const page = await firecrawl.scrape(ctx, url, {
-          formats: ["markdown"],
-          onlyMainContent: true,
-        });
-        const markdown: string = page?.markdown ?? "";
-        if (markdown.length > 400) documents.push({ url, markdown });
-      } catch {
-        // Skip this document and keep going.
+    // A chosen document that is not read is recorded rather than dropped.
+    // Measured on this deployment: Ring's crawl chose 8 documents and reported
+    // `Read 2 documents`, and the other 6 were discarded here for being under
+    // 400 characters with no trace, so the note could not be read to tell
+    // whether they had been chosen at all. That is the same shape as the note
+    // that hid Evri's defect: a total that looks like a field.
+    const notRead: string[] = [];
+    let firstScrapeError: string | null = null;
+    // How many documents needed the second attempt. This is what makes the
+    // retry a measurement rather than a plausible fix: without it, a run that
+    // read everything looks the same whether the retry did the work or the
+    // provider simply behaved. Measured on this deployment, the same eight Ring
+    // URLs failed 7 times in one run and 0 times in the next, so the variance
+    // is larger than any single run can show.
+    let retried = 0;
+    // The provider rate-limits this endpoint, and the limit is 18 requests a
+    // minute, read off its own 429 body rather than guessed:
+    // `Consumed (req/min): 18, Remaining (req/min): 0`. A crawl spends one
+    // request on the map and one per document, so eight documents arrive as a
+    // burst and the tail is refused. Measured on this deployment, that is the
+    // reason the same eight Ring URLs read 2 documents in one run and 8 in the
+    // next, and why retrying immediately cannot help: the minute window is
+    // still full.
+    //
+    // The gap is derived from the limit: 5 seconds between documents holds a
+    // crawl of eight to about 13 requests a minute, which leaves headroom for
+    // the map call and for a second crawl opening while the first minute is
+    // still running. Slower is the right trade here, because a crawl that reads
+    // 2 of the 8 documents it chose produces a worse claim than one that takes
+    // an extra half minute.
+    const PACE_MS = 5_000;
+
+    for (const [index, url] of chosen.entries()) {
+      if (index > 0) await new Promise((resolve) => setTimeout(resolve, PACE_MS));
+      // Two attempts, because the failures are transient rather than a property
+      // of the pages. Measured on this deployment: the same eight Ring URLs
+      // failed 7 times in one run and 0 times in the next, which is the
+      // signature of a provider hiccup or a rate limit and not of a page that
+      // cannot be read. Without the second attempt a run silently understates
+      // what a company publishes, which is the failure this whole module keeps
+      // having to be cured of.
+      let markdown = "";
+      let lastError: unknown = null;
+      let recovered = false;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const page = await firecrawl.scrape(ctx, url, {
+            formats: ["markdown"],
+            onlyMainContent: true,
+          });
+          markdown = page?.markdown ?? "";
+          lastError = null;
+          if (attempt > 0) recovered = true;
+          break;
+        } catch (err) {
+          lastError = err;
+        }
+      }
+      if (recovered) retried += 1;
+
+      if (lastError !== null) {
+        // Record WHY. The note could only say "scrape failed", which is the
+        // same undiagnosable shape as the total it replaced: it cannot say
+        // whether this is a rate limit, a timeout, or a page the provider
+        // cannot render. The message is kept once and in full rather than per
+        // document, because the failures arrive in a block and repeat, so six
+        // copies of one error spend the note without adding anything.
+        notRead.push(shortPath(url));
+        firstScrapeError ??= String(lastError).slice(0, 300);
+      } else if (markdown.length > 400) {
+        documents.push({ url, markdown });
+      } else {
+        notRead.push(`${shortPath(url)} (${markdown.length} chars)`);
       }
     }
 
@@ -205,13 +268,19 @@ export const readCounterparty = internalAction({
     await ctx.runMutation(internal.policies.markCrawl, {
       counterpartyId: args.counterpartyId,
       status: "crawled",
-      note: `Read ${documents.length} documents from ${origin.replace(/^https?:\/\//, "")} (${perDocument.join(", ")}), kept ${total} citable provisions. Found via ${sources}.`,
+      note:
+        `Read ${documents.length} of ${chosen.length} chosen documents from ${origin.replace(/^https?:\/\//, "")} ` +
+        `(${perDocument.join(", ")}), kept ${total} citable provisions.` +
+        (notRead.length > 0 ? ` Not read: ${notRead.join(", ")}.` : "") +
+        (retried > 0 ? ` ${retried} read on a second attempt.` : "") +
+        (firstScrapeError !== null ? ` First scrape error: ${firstScrapeError}` : "") +
+        ` Found via ${sources}.`,
     });
 
     return {
       provisions: total,
       documents: documents.length,
-      note: `Read ${documents.length} documents from ${new URL(origin).host}.`,
+      note: `Read ${documents.length} of ${chosen.length} chosen documents from ${new URL(origin).host}.`,
     };
   },
 });
