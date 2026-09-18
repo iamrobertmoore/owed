@@ -178,7 +178,7 @@ export function RecordSheet({
                   {/*
                     Four outcomes, and they are four different facts, so none of
                     them may stand in for another:
-                      crawled - their terms were read and promise nothing here
+                      crawled - pages that look like their terms were read and promise nothing here
                       skipped - we looked for their terms and found no such page
                       failed  - the attempt to reach their terms did not finish
                       pending - nobody has looked yet
@@ -187,13 +187,24 @@ export function RecordSheet({
                     its own note said the mapper had walked 199 URLs. If the
                     union in schema.ts grows a fifth value, this chain needs a
                     fifth branch rather than a wider fallback.
+                    `crawled` overclaimed in the same way, one pass later, and
+                    the note printed beside it is what gave it away. It said the
+                    agent read "this company's published terms", which the crawl
+                    cannot promise: it picks documents by the shape of their
+                    URL. Measured on this deployment, Evri's crawl was `crawled`
+                    and the six documents it read were per-retailer guides to
+                    sending goods back, with Evri's own terms page never opened.
+                    The branch now says what the status actually means and the
+                    note lists the documents, so the two can be read against
+                    each other.
                   */}
                   {record.crawlStatus === "crawled" ? (
                     <>
-                      Nothing yet. The agent read this company's published terms
-                      and found no provision that commits them to a remedy for
-                      this transaction, so there is no claim to make. A claim
-                      only exists when a specific provision promises a specific
+                      Nothing yet. The agent found the pages on this company's
+                      site that look like their terms and read them, and kept no
+                      provision that commits them to a remedy for this
+                      transaction, so there is no claim to make. A claim only
+                      exists when a specific provision promises a specific
                       remedy and the record shows the condition for it was met.
                       {record.crawlNote ? (
                         <>
