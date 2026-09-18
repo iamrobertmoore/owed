@@ -6,6 +6,7 @@ import type { Id } from "../convex/_generated/dataModel";
 import { api } from "../convex/_generated/api";
 import { Mark } from "./Brand";
 import { ClaimSheet } from "./ClaimSheet";
+import { RecordSheet } from "./RecordSheet";
 import {
   ago,
   day,
@@ -225,18 +226,24 @@ function SignIn({ autoFailed }: { autoFailed: string | null }) {
 /* ---------------------------------------------------------------- ledger -- */
 
 /**
- * A claim can be linked to directly, so a case can be handed to someone as a
- * URL rather than described.
+ * Which sheet is open, read from the URL.
  *
- * `#claim=<id>` opens a claim in this ledger. `#claim=demo-found` opens the
- * worked example. The slug form is the one that matters for a link in a
- * README: a Convex id belongs to whoever created the row, so an id in a link
- * is dead for everybody else, while a slug resolves against whoever is
- * looking.
+ * Two shapes. `#claim=` takes an id or a worked-example slug, and
+ * `#record=<id>` opens a record. The slug form is the one that matters for a
+ * link in a README: a Convex id belongs to whoever created the row, so an id in
+ * a link is dead for everybody else, while a slug resolves against whoever is
+ * looking. A record id has no slug form because nothing links to a record, so
+ * the only way to arrive at one is to click the row that owns it.
  */
-function claimKeyFromHash(): string | null {
-  const match = window.location.hash.match(/claim=([A-Za-z0-9_-]+)/);
-  return match ? match[1] : null;
+type Route = { view: "claim" | "record"; key: string } | null;
+
+function routeFromHash(): Route {
+  const hash = window.location.hash;
+  const record = hash.match(/record=([A-Za-z0-9]+)/);
+  if (record) return { view: "record", key: record[1] };
+  const claim = hash.match(/claim=([A-Za-z0-9_-]+)/);
+  if (claim) return { view: "claim", key: claim[1] };
+  return null;
 }
 
 /** Convex ids are lowercase alphanumeric. A slug carries a hyphen. */
@@ -261,16 +268,20 @@ function Ledger({ onLeave }: { onLeave: () => void }) {
   const arrivals = useQuery(api.messages.list);
   const spend = useQuery(api.claims.spend);
   const inbox = useQuery(api.inboxes.mine);
+  const viewer = useQuery(api.inboxes.viewer);
   const provision = useAction(api.inboxes.provision);
   const seedExample = useMutation(api.example.seedExample);
   const loadExample = useMutation(api.example.loadExample);
 
-  const [hashKey, setHashKey] = useState<string | null>(() => claimKeyFromHash());
+  const [route, setRoute] = useState<Route>(() => routeFromHash());
   const [addressError, setAddressError] = useState<string | null>(null);
   const [loadingExample, setLoadingExample] = useState(false);
   const [exampleNote, setExampleNote] = useState<string | null>(null);
   const asked = useRef(false);
   const seeded = useRef(false);
+
+  const hashKey = route?.view === "claim" ? route.key : null;
+  const openRecordId = route?.view === "record" ? (route.key as Id<"records">) : null;
 
   // A slug is resolved against this visitor's own copy of the worked example.
   const slug = hashKey !== null && !looksLikeClaimId(hashKey) ? hashKey : null;
@@ -286,7 +297,7 @@ function Ledger({ onLeave }: { onLeave: () => void }) {
   // The URL is the source of truth for which sheet is open, so the back button
   // and a pasted link both behave.
   useEffect(() => {
-    const onHash = () => setHashKey(claimKeyFromHash());
+    const onHash = () => setRoute(routeFromHash());
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
@@ -295,11 +306,22 @@ function Ledger({ onLeave }: { onLeave: () => void }) {
     window.location.hash = `claim=${id}`;
   }
 
+  /**
+   * Open the record behind an arrival.
+   *
+   * This is the sheet that was missing. A kept message with no claim found from
+   * it had no destination at all, so the row was rendered as plain text and the
+   * words "became a record" pointed at nothing.
+   */
+  function openRecord(id: Id<"records">) {
+    window.location.hash = `record=${id}`;
+  }
+
   function close() {
     // replaceState rather than assigning: closing should not add a history
     // entry that reopens the sheet when someone presses back.
     window.history.replaceState(null, "", window.location.pathname);
-    setHashKey(null);
+    setRoute(null);
   }
 
   /**
@@ -405,17 +427,28 @@ function Ledger({ onLeave }: { onLeave: () => void }) {
         </div>
         <div className="actions">
           {/*
-            Both actions end the guest session, because that is the only way
-            back to the card: `leave` sets the flag and signs out. The labels
-            differ because the visitor does. A guest is creating an account,
-            and an account holder is signing out of one.
+            One action, two labels, and only ever one of them on screen.
+
+            Both end the session and return to the card, because that is the
+            only way back to it: `leave` sets the flag and signs out. The label
+            is the only part that differs, and it is the part that matters. A
+            guest is being offered an account; an account holder is being
+            offered the way out of one. Both buttons used to render at once,
+            which offered somebody already signed in the chance to create an
+            account they already had.
+
+            Nothing renders until the answer arrives, so the button cannot
+            change its label under a finger already moving toward it.
           */}
-          <button className="act ghost" onClick={onLeave} type="button">
-            Create an account
-          </button>
-          <button className="act ghost" onClick={onLeave} type="button">
-            Sign out
-          </button>
+          {viewer === undefined ? null : viewer.guest ? (
+            <button className="act ghost" onClick={onLeave} type="button">
+              Create an account
+            </button>
+          ) : (
+            <button className="act ghost" onClick={onLeave} type="button">
+              Sign out
+            </button>
+          )}
         </div>
       </header>
 
@@ -542,10 +575,23 @@ function Ledger({ onLeave }: { onLeave: () => void }) {
                 </>
               );
 
-              // Clickable only when there is somewhere to go. A row that looks
-              // like a button and does nothing is worse than a plain one.
+              // Clickable when there is somewhere to go, and a claim is not the
+              // only destination. A claim first, because it carries the terms
+              // and the letter. The record underneath it when no claim was found
+              // from it, which is the ordinary outcome for an order
+              // confirmation and used to be the row with no destination at all.
+              // Plain text only when there is neither.
               return claimId ? (
                 <button key={m._id} className="row" onClick={() => open(claimId)} type="button">
+                  {body}
+                </button>
+              ) : m.recordId ? (
+                <button
+                  key={m._id}
+                  className="row"
+                  onClick={() => openRecord(m.recordId as Id<"records">)}
+                  type="button"
+                >
                   {body}
                 </button>
               ) : (
@@ -679,8 +725,19 @@ function Ledger({ onLeave }: { onLeave: () => void }) {
             </span>
           </div>
           <div className="rows">
+            {/*
+              Every record opens, including one with no claim found from it.
+              This list was the paper trail with no way to read it: the rows
+              were inert and the only sheet in the app was the claim sheet, so a
+              record that produced no claim could not be opened from anywhere.
+            */}
             {records.map((record) => (
-              <div key={record._id} className="row" style={{ cursor: "default" }}>
+              <button
+                key={record._id}
+                className="row"
+                onClick={() => openRecord(record._id)}
+                type="button"
+              >
                 <span className="dot quiet" />
                 <span>
                   <span className="title">{record.description}</span>
@@ -704,7 +761,7 @@ function Ledger({ onLeave }: { onLeave: () => void }) {
                   </span>
                 </span>
                 <span className="amount">{money(record.amount, record.currency)}</span>
-              </div>
+              </button>
             ))}
           </div>
         </section>
@@ -719,6 +776,13 @@ function Ledger({ onLeave }: { onLeave: () => void }) {
       </div>
 
       {selected && <ClaimSheet claimId={selected} onClose={close} />}
+      {openRecordId && (
+        <RecordSheet
+          recordId={openRecordId}
+          onOpenClaim={open}
+          onClose={close}
+        />
+      )}
     </div>
   );
 }

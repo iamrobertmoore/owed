@@ -491,3 +491,81 @@ export const list = query({
     return withNames.sort((a, b) => b.occurredAt - a.occurredAt);
   },
 });
+
+/**
+ * One record, for the sheet that opens when a row is clicked.
+ *
+ * The arrivals list has always been able to say "became a record" without there
+ * being anywhere to go and read it. A record with no claim found from it is the
+ * ordinary outcome for an order confirmation, which is the first thing anybody
+ * forwards, so the state that could not be opened was the common one rather
+ * than the rare one. The row was rendered as plain text on purpose, because a
+ * button that does nothing is worse than a row that does not look like one, but
+ * the label above it still read as a promise.
+ *
+ * Scoped to the caller like every other read. A record id in a URL is not a
+ * capability: somebody else's id returns null rather than a stranger's order.
+ */
+export const one = query({
+  args: { recordId: v.id("records") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) return null;
+
+    const record = await ctx.db.get(args.recordId);
+    if (!record || record.userId !== userId) return null;
+
+    const counterparty = await ctx.db.get(record.counterpartyId);
+
+    /*
+      The paper it was read from, resolved from both directions.
+
+      A record created by the reader carries `sourceMessageId`. The worked
+      example's rows carry nothing on that field, because the seed writes the
+      link the other way: each message names the record it became. Reading only
+      the record's own field leaves the sheet's most useful block empty on every
+      example ledger, which is the screen a judge sees first.
+
+      Derived here rather than backfilled, the same way `list` derives
+      provenance: no migration, and no ledger left behind on an old shape. Two
+      messages can become one record, which is why this is a list.
+    */
+    const own = await ctx.db
+      .query("messages")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+    const paper = own
+      .filter((m) => m._id === record.sourceMessageId || m.recordId === record._id)
+      .sort((a, b) => a.at - b.at)
+      .map((m) => ({
+        _id: m._id,
+        subject: m.subject,
+        fromAddress: m.fromAddress,
+        at: m.at,
+        text: m.text,
+      }));
+
+    // The claim found from this record, if there was one. Read the same way
+    // `list` reads it, so the two surfaces cannot disagree about provenance.
+    const claims = await ctx.db
+      .query("claims")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+    const claim = claims.find((c) => c.recordId === record._id);
+
+    return {
+      ...record,
+      counterpartyName: counterparty?.name ?? "Unknown",
+      counterpartyDomain: counterparty?.domain ?? null,
+      // Whether their terms were actually read, because "nothing in their terms
+      // commits them here" and "I could not read their terms" are different
+      // facts and the sheet must not let one stand in for the other.
+      crawlStatus: counterparty?.crawlStatus ?? null,
+      crawlNote: counterparty?.crawlNote ?? null,
+      fromExample: record.demoKey !== undefined || claim?.demoKey !== undefined,
+      claimId: claim?._id ?? null,
+      claimTitle: claim?.title ?? null,
+      paper,
+    };
+  },
+});

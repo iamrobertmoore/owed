@@ -60,6 +60,14 @@ export const list = query({
           at: m.at,
           outcome: m.ingestOutcome ?? null,
           reason: m.ingestReason ?? null,
+          // Carried so the row knows whether it has somewhere to go. A kept
+          // message with no claim found from it is the ordinary outcome for an
+          // order confirmation, and that is the row the sheet opens for: the
+          // pill says "became a record", so the record has to be reachable.
+          // `recordId` is absent rather than null when the write after the
+          // decision failed, which is why the UI treats it as a target and not
+          // as a flag.
+          recordId: m.recordId ?? null,
           claimId: linked?._id ?? null,
           claimTitle: linked?.title ?? null,
           claimStage: linked?.stage ?? null,

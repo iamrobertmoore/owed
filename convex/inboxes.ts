@@ -259,6 +259,26 @@ export const mine = query({
   },
 });
 
+/**
+ * Who the caller is, for the one thing the UI needs it for.
+ *
+ * The header offers a guest "Create an account" and an account holder "Sign
+ * out". Both end the session and return to the card, so they are the same
+ * action under two labels, and the label is the only part that differs. The UI
+ * cannot work out which one to show from anything it already reads: a shared
+ * alias is not the same fact as a guest, because an owner whose inbox could not
+ * be created is also on the shared alias and is not a guest. So it asks.
+ */
+export const viewer = query({
+  args: {},
+  handler: async (ctx): Promise<{ signedIn: boolean; guest: boolean }> => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) return { signedIn: false, guest: false };
+    const user = await ctx.db.get(userId);
+    return { signedIn: true, guest: !user?.email };
+  },
+});
+
 /** Copy the address to the clipboard. A mutation keeps the UI honest. */
 export const touch = mutation({
   args: {},
