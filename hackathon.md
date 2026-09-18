@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-16T07:50:55Z
-- **Last updated:** 2026-09-18T18:33:58Z
+- **Last updated:** 2026-09-18T19:32:45Z
 
 ## Log
 
@@ -991,3 +991,49 @@ has yet produced a claim, and the two that failed on this bug now read the right
 for a reason that is correct: a price rise on a rolling subscription has no exit charge to be released from.
 The claim path on real mail remains unexercised, and the effect of this change on a real claim is therefore
 still unmeasured.
+
+### 2026-09-18 - 4b54f48
+
+**The deploy refused the extracted module, and nothing else would have caught it.** `policy-urls.js is not a
+valid path to a Convex module. Path component policy-urls.js can only contain alphanumeric characters,
+underscores, or periods.` The local build, the typecheck and a 19-check harness all passed on the file; the
+constraint is Convex's and it is not visible from the repository. Every other module here is already
+camelCase or underscore, so the convention was the answer and the new file was the only one breaking it. It
+is now `policyUrls.ts`.
+
+**Recorded rather than quietly renamed, because it is the same finding this module exists to serve.** A check
+that runs locally cannot answer a question about the deployment, and the only surface that could was the
+deploy itself.
+
+### 2026-09-18 - 3c091b8
+
+**The crawl was choosing documents and throwing away the ones it could not read, without saying so.** Ring's
+crawl chose 8 documents and reported `Read 2 documents`. The other 6 were discarded and left no trace, so a
+reader could not tell whether they had been chosen at all, which is the same shape as the note that hid
+Evri's defect: a total that reads as a field.
+
+**Making the discard visible named the cause, which is the whole reason for recording it.** The note now says
+how many of the chosen documents were read, names the ones that were not, reports how many were recovered on
+a second attempt, and carries the provider's own error once. That error is
+`Firecrawl /v2/scrape failed (429): Rate limit exceeded. Consumed (req/min): 18, Remaining (req/min): 0.` A
+crawl spends one request on the map and one per document, so eight documents arrive as a burst against an
+18-per-minute limit and the tail is refused. It explains why the same eight Ring URLs read 2 documents in one
+run and 8 in the next, and why retrying immediately cannot help, since the minute window is still full.
+
+**Documents are now paced 5 seconds apart, and a refused scrape is attempted once more.** The gap is derived
+from the limit rather than guessed: it holds a crawl of eight to about 13 requests a minute. Across the same
+seven counterparties, **30 of 48 chosen documents were read before the change and 47 of 48 after**, and the
+retry recovered a document on two of them, which is what makes it a measurement rather than a plausible fix.
+
+**Verified on the judged deployment.** Evri's crawl now reads `/terms-and-conditions` and `/terms-of-use`
+first and keeps **33** provisions, where before it read six per-retailer guides to sending goods back and kept
+none. Ring's reads its own `/terms` and keeps 46. The picker fix and this one were both deployed and re-run
+here rather than reasoned about.
+
+**What is not measured.** The single document still unread is one 429 on the last of Evri's eight, so the
+pacing reduces the failures rather than eliminating them, and the ledger is now honest about the gap instead
+of silent. And the re-crawl of all seven real counterparties followed by the detector over the owner's seven
+unclaimed records produced **no new claim**: every reason is about the paper, not the product. Six state that
+nothing went wrong that the company's terms commit it to remedy, and the seventh is the price-change notice,
+where the detector now reads the UK agreement and reports that no provision entitles a remedy for it. That is
+the correct answer for a rolling subscription and it means the claim path on real mail is still unexercised.
