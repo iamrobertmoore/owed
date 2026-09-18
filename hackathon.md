@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-16T07:50:55Z
-- **Last updated:** 2026-09-18T11:36:00Z
+- **Last updated:** 2026-09-18T11:54:28Z
 
 ## Log
 
@@ -755,3 +755,53 @@ explaining why rather than an error trace", which the fallback made false. The r
 rewritten as a numbered list, because I could not follow its prose and said so. And
 `convex/convex.config.ts` carries the measurement, so the next person to reach for
 `app.use(agentmail, { env })` finds out why it is not there without repeating it.
+
+### 2026-09-18 - f7487c1
+
+**The correction in the entry above reached one file and left two.** The fallback that hands a refused
+owner the guest alias made one claim false: that an owner past the plan's allowance is given a sentence
+about the refusal. I corrected the README and recorded that above, and the same sentence was still
+standing in `convex/inboxes.ts`, three lines above the comment that contradicts it, and in the submission
+copy, which is the text that goes into the form.
+
+**Nothing was reading either of them for it, and that is the finding.** Neither phrasing was in the
+sweep's `stale` list, so the sweep reported `PASS: no stale claims, all required claims present` over two
+live contradictions. This is the defect class the spec exists for, arriving in the one way the spec cannot
+see it: scope decides which files are read and the string list decides what is found in them, and the
+string was absent. A clean sweep is evidence about the strings it holds and nothing more.
+
+**Both now say what the code does, and both are guarded from both directions.** `provision`'s docstring
+says the owner is handed the alias a guest would have got. The submission copy says the same in its own
+words. Each file gained a `required` string for the new wording and the retired wording went on `stale`, so
+the claim cannot be deleted and cannot come back. `repo/convex/inboxes.ts` is the second source file in
+scope, for the same reason as the first: a docstring stating current behaviour belongs next to the code
+that decides it. Four controls went in, each watched failing for the named reason, and the suite is
+**21/21**.
+
+**The judged bundle was checked against a fresh build rather than assumed.** The fix touched only `convex/`
+and documentation, so the frontend should not have moved, and a build with `VITE_CONVEX_URL` set to the
+production host reproduces `index-DGyWe2Zm.js` and `index-BXlwFeM6.css`, which are the two assets the live
+site serves. The deployed frontend is this tree, which is a measurement rather than an expectation.
+
+**The fallback is confirmed on production, both branches.** The deployment holds one inbox of its own,
+`owed-fwz3ythw47@agentmail.to`, created at 11:28:53 UTC, and twenty-two guest aliases on the shared inbox.
+The branch the fix added works and the branch it left alone still does.
+
+**The first count I took was truncated and I reported it as if it were whole.** A read at `--limit 20`
+returned twenty rows and I had written "nineteen guest aliases" from it. The table holds twenty-three rows.
+Nothing in the output says it stopped early, which is why the limit has to exceed the expected count or the
+count has to come from the whole table.
+
+**The sponsor's own check was run, and it is clean of anything that needs fixing.** `npx convex insights
+--prod` reports four warnings over 72 hours, each a single OCC retry on a different table: `aiCache` on a
+cache put, `runStatus` in the component's callback pool, `claims` while seeding the worked example, and
+`inboxes` while writing a guest alias. One retry each, and Convex retries these itself, so every one is a
+concurrent write the platform resolved rather than a failure. `storeAlias` is the one worth naming because
+it sits on the path a visitor takes: it reads `by_user` and inserts only if nothing is there, so two
+concurrent calls for one guest both find nothing and one aborts and retries, at which point it finds the
+row and returns it. The correct outcome rests on the platform's serializable isolation rather than on
+anything in the function, which is why the right result here is a retry and not a second row.
+
+**What is still not measured.** `recordSent` has not run: all 132 claims are the worked example, and the
+worked example is refused before the wire by design. The outbound half is proven at the provider and
+unproven end to end from the app. The round-trip sheet is what closes it.
