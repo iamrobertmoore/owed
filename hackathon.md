@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-16T07:50:55Z
-- **Last updated:** 2026-09-18T17:57:29Z
+- **Last updated:** 2026-09-18T18:33:58Z
 
 ## Log
 
@@ -942,3 +942,52 @@ deployment. None was visible by reading the component, because the component was
 The gates are green on the same tree: the claim-consistency sweep passes with the new clause guarded as a
 required string, the hygiene sweep is empty across 145 files, and the controls suite is 32 of 32, the new
 control proving the guard fails when the clause is removed.
+
+### 2026-09-18 - 554ab91
+
+**The crawl was reading six guides to sending goods back instead of the terms page, and there were four
+separate reasons plus a bound that cut a sitemap in half.** Evri's crawl carried the status `crawled` and
+kept nothing, which reads as a company with nothing to say. It had read `/return-a-parcel/argos-returns` and
+four more of Evri's per-retailer returns guides, and never opened `/terms-and-conditions`. `return` and
+`returns` were both vocabulary tokens, so a URL containing both was scored twice and the guide reached **27**
+against the terms page's **17**.
+
+**Three more, all measured rather than argued.** `agreement` was absent from the vocabulary entirely, so
+Spotify's `end-user-agreement` scored zero and its **292** locale variants were filtered out, and the crawl
+read creator terms, artist terms, two audiobook refund policies and a Korea-market cancellation policy for a
+UK subscription. `privacy` was present as a concept, so `privacy_policy.jsp` scored 7 and took a slot a claim
+could have used: this deployment holds **7** provisions from that document against **6** from the site's own
+terms page. And two preferences were applied as magnitudes rather than as orderings, so both could exclude
+rather than reorder: depth and the deprioritise penalty were subtracted from the score, which put a
+deeply-nested contract at **1** and a creator-terms page at **-15**, where a `score > 0` test dropped it
+silently. They are now facts about the document and are sorted on instead.
+
+**A silent truncation was the fifth, and it produced a confident wrong answer rather than a gap.** The bound
+on a fetched body was 8,000,000 bytes. Spotify's `/legal/sitemap.xml` is **9,211,047** bytes and lists 292
+URLs, one per market, and the UK agreement sits at index **273**. So the walk returned 254 URLs, and 254 reads
+like a field rather than a cut, and the crawl picked **Ireland's** agreement for a UK subscription. The bound
+is now 32MB and a body that reaches it is refused rather than parsed as a prefix, so a partial document falls
+through to the next candidate. The walk's budget also counts distinct documents rather than URLs now, so 292
+variants of one agreement occupy one slot.
+
+**The scorer and the walk moved to a module with no Convex import, because the check that covered them was
+not checking them.** The harness carried its own copy of all three functions and passed every case while the
+shipped scorer ranked the six guides above the terms page. A check that runs a copy of the logic is a check on
+the copy, so the copy was deleted rather than kept as a green light. The replacement imports the shipped
+module, runs 19 checks, and carries both retired versions as controls that each assertion has to fail on: an
+assertion that passes on the shipped code and on every control is reported as a guard rather than counted as
+evidence. Two of the controls earned that on the first run by catching a figure in a comment that was wrong,
+`22` where the retired scorer gives `27`, and the harness now prints both values so the number has a source
+that re-runs.
+
+**Verified against the live sites, which is not yet the same as verified on the deployment.** Running the
+shipped picker against four companies' own sitemaps: Evri returns `/terms-and-conditions` first out of 115
+policy-shaped URLs, Spotify returns `/uk/legal/end-user-agreement`, and Ring and Sigma return their terms
+pages. That is the picker measured on the real sites. It is not a measurement of the crawl, because the crawl
+has not been re-run on this deployment since the change, so what the ledger will show is not yet known.
+
+**What is not measured.** The fix changes which document is read, not whether a claim results. No real forward
+has yet produced a claim, and the two that failed on this bug now read the right terms and still produce none,
+for a reason that is correct: a price rise on a rolling subscription has no exit charge to be released from.
+The claim path on real mail remains unexercised, and the effect of this change on a real claim is therefore
+still unmeasured.
