@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-16T07:50:55Z
-- **Last updated:** 2026-09-18T09:10:42Z
+- **Last updated:** 2026-09-18T09:40:34Z
 
 ## Log
 
@@ -684,3 +684,29 @@ drafted letter and the approval gate. That path used to stop at the sign-in
 screen, which is the reason the README's four links are worth reading again. The
 served bundle carries the new landing sentence and the new card sub-line, and the
 retired tagline is absent from it (`src/App.tsx`, `src/index.css`, `README.md`).
+
+### 2026-09-18 - 7d12547
+
+**The entry above claimed the card survives behind a header action, and in the build it
+described it did not.** Clicking "Create an account" on the deployed URL did nothing at
+all. `isAuthenticated` is checked before `left` when this app picks a screen, so the
+guest session the change had just started on load won the render and the card was never
+reached. Setting the flag changes nothing while the session is live, and clearing the
+session is what makes the card reachable in the first place.
+
+`leave()` now sets the flag and signs out, and both header actions call it. The labels
+differ because the visitor does: a guest is creating an account, and an account holder
+is signing out of one.
+
+**Found by clicking the button rather than by reading the code.** That is the same
+instrument the gate change was verified with, and it was pointed at the first screen and
+not at the second. **Three documents already said the card was behind a header action
+and all three were wrong when they were written**, including the one that tells the
+operator to press it before recording. The sweep now requires `void signOut();` in
+`src/App.tsx`, so the sign-out cannot come out of `leave` without a check failing.
+
+**Checked on the deployment, all four states:** a cold load renders the ledger; the
+header action shows the card; the card's guest button returns to a seeded ledger with
+four claims and its own address; and a reload with the flag set shows the card rather
+than minting a new guest. Served bundle `index-DGyWe2Zm.js`, 326,484 bytes
+(`src/App.tsx`).
