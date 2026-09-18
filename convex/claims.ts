@@ -223,6 +223,14 @@ export type ClaimDetail = {
   provision: Doc<"provisions"> | null;
   events: Doc<"events">[];
   messages: Doc<"messages">[];
+  /**
+   * The arrivals the claim was found from: the inbound mail that became the
+   * record this claim is argued over. Not the same set as `messages`, which is
+   * the correspondence on the claim, and the two were being conflated on
+   * screen. The detection event cites the paper it read, so the sheet has to be
+   * able to show that paper rather than only name it.
+   */
+  paper: Doc<"messages">[];
   evidence: Doc<"evidence">[];
 };
 
@@ -345,12 +353,38 @@ export const detail = query({
         .collect(),
     ]);
 
+    /*
+      The paper the claim was found from, read off the record rather than off
+      the claim. A forwarded message points at the record it became, and the
+      claim points back at that record, which is the link `messages.list`
+      already walks to answer "did this arrival become anything".
+
+      Filtered in memory over `by_user` rather than given an index of its own,
+      deliberately: the schema's index count is a published figure in the
+      README, the architecture diagram and the submission, and a new index
+      would make four artefacts wrong to save one pass over a user's own
+      messages. The set is bounded by one person's paper trail.
+    */
+    const paper = claim.recordId
+      ? (
+          await ctx.db
+            .query("messages")
+            .withIndex("by_user", (q) => q.eq("userId", userId))
+            .collect()
+        )
+          .filter(
+            (m) => m.direction === "inbound" && m.recordId === claim.recordId,
+          )
+          .sort((a, b) => a.at - b.at)
+      : [];
+
     return {
       claim,
       counterparty,
       provision,
       events: events.sort((a, b) => a.at - b.at),
       messages: messages.sort((a, b) => a.at - b.at),
+      paper,
       evidence,
     };
   },

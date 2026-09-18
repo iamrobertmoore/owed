@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import type { Id } from "../convex/_generated/dataModel";
 import { api } from "../convex/_generated/api";
-import { day, eventLabel, money, moment, stageLabel } from "./format";
+import { day, eventLabel, money, moment, senderOf, stageLabel } from "./format";
 
 /**
  * The claim sheet.
@@ -119,6 +119,26 @@ export function ClaimSheet({
                 {claim.deadlineBasis ? ` ${claim.deadlineBasis}` : ""}
               </div>
             </div>
+
+            {detail.paper.length > 0 && (
+              <div className="block">
+                <div className="label">The paper it was found from</div>
+                {detail.paper.map((m) => (
+                  <div key={m._id} style={{ marginBottom: 14 }}>
+                    <div
+                      style={{ fontSize: 13, color: "var(--muted)", marginBottom: 4 }}
+                    >
+                      {senderOf(m.fromAddress)} · {day(m.at)}
+                    </div>
+                    <div style={{ fontWeight: 600 }}>{m.subject}</div>
+                  </div>
+                ))}
+                <div style={{ marginTop: 4, fontSize: 13, color: "var(--muted)" }}>
+                  The agent read this and nothing else about what happened. It did not
+                  need to be told there was a dispute.
+                </div>
+              </div>
+            )}
 
             {detail.provision && (
               <div className="block">

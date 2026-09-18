@@ -65,6 +65,29 @@ export function until(at: number | undefined): string {
   return `in ${days} days`;
 }
 
+/**
+ * The sender as a person rather than a header.
+ *
+ * A `From` header usually arrives as `Name <address>`, and the name is the half
+ * that reads as a person. The address is the fallback rather than the default,
+ * which is a fact about the product and not only about formatting: a forward
+ * from a personal mailbox carries its owner's name, and a list that showed the
+ * address instead would be showing something the mail did not say.
+ *
+ * It lives here because two surfaces print a sender, the arrivals list and the
+ * paper block on the claim sheet, and two copies of this rule would be two
+ * answers to "who sent this" the moment one of them changed.
+ */
+export function senderOf(from: string): string {
+  const angled = from.match(/^\s*"?([^"<]*?)"?\s*<([^>]+)>\s*$/);
+  if (angled) {
+    const name = angled[1].trim();
+    if (name) return name;
+    return angled[2].trim();
+  }
+  return from.trim();
+}
+
 const STAGE_LABEL: Record<string, string> = {
   detected: "Found",
   drafting: "Writing",

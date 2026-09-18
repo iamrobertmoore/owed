@@ -13,6 +13,7 @@ import {
   isRecovered,
   kindLabel,
   money,
+  senderOf,
   stageLabel,
   until,
 } from "./format";
@@ -183,16 +184,6 @@ function looksLikeClaimId(key: string): boolean {
  * only when it does not. A company writing from `billing@...` has no display
  * name and still shows in full, which is the case the evidence was for.
  */
-function senderOf(from: string): string {
-  const angled = from.match(/^\s*"?([^"<]*?)"?\s*<([^>]+)>\s*$/);
-  if (angled) {
-    const name = angled[1].trim();
-    if (name) return name;
-    return angled[2].trim();
-  }
-  return from.trim();
-}
-
 function Ledger() {
   const { signOut } = useAuthActions();
   const ledger = useQuery(api.claims.ledger);
