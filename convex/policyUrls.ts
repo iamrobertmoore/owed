@@ -1,10 +1,10 @@
 /**
  * Which of a company's published pages are worth reading.
  *
- * This is the step that decides whether a claim is possible at all, and it has
- * been wrong in four measured ways. Each one is recorded beside the code that
- * answers it, because the reasoning is the only thing that keeps a later change
- * from reintroducing one.
+ * This is the step that decides whether a claim is possible at all, and every
+ * way it has been wrong is recorded beside the code that answers it, because
+ * the reasoning is the only thing that keeps a later change from reintroducing
+ * one.
  *
  * The module has no Convex import on purpose. `policies.ts` cannot be imported
  * outside the Convex runtime because it constructs a component client at the
@@ -84,13 +84,33 @@ const SYNONYMS: Record<string, string> = {
  * it and kept 7 provisions from it, which spent a slot that belonged to a
  * document a claim could be argued from. These are excluded outright rather
  * than ranked down: no amount of ranking makes a privacy notice citable.
+ *
+ * `item` and `guides` are here from a measurement rather than a guess, and the
+ * measurement is the one that follows from comparing score before depth.
+ * Measured on Sigma Sports, whose product URLs are `/item/<brand>/<product>/<id>`:
+ * `/item/CeramicSpeed/UFO-Drip-All-Conditions-Chain-Treatment/10TEY` scores 14,
+ * because `All Conditions` is the word `conditions` and the tokeniser is right
+ * to match it. Six of those reached the pick and crowded out the company's
+ * warranty and delivery pages. The same site's `/hub/guides/...` is an editorial
+ * article that scores 14 off the word in its slug and yields nothing citable.
+ *
+ * **`item` and `guides` are whole tokens, and the singular `guide` is not one
+ * of them.** Measured: `guides` is the name of an editorial section, and the
+ * only other URLs it matches on any of the eleven sites are two Evri packaging
+ * articles that never scored high enough to be picked. `guide` is the last word
+ * of Argos' `/help/delivery-&-collection-guide`, which is a real page, so it
+ * stays a candidate. The tokeniser splits on `-`, so `items` in
+ * `/help/refunds-&-returns/my-items-faulty-what-should-i-do` is a different
+ * token again and is unaffected.
  */
 const REJECT_TOKENS = [
   // Commerce noise.
-  "product", "products", "shop", "store", "cart", "checkout", "sku",
+  "product", "products", "shop", "store", "cart", "checkout", "sku", "item",
   // Data and corporate boilerplate.
   "privacy", "cookie", "cookies", "accessibility", "security", "tax",
   "modern-slavery", "sustainability", "governance", "esg", "gdpr",
+  // Editorial sections, which state nothing a claim can be argued from.
+  "guides",
 ];
 
 /**
@@ -167,12 +187,27 @@ function localeRank(locale: string | null): number {
 }
 
 /**
- * The document a URL is a variant of, with the market marker removed.
+ * The document a URL is a variant of, with the market markers removed.
  *
  * `spotify.com/uk/legal/end-user-agreement` and its 291 siblings are one
  * document in 292 markets, and treating them as 292 candidates spends every
  * slot the crawl has on the same page. Collapsing them is what makes room for
  * the rest of a company's policies.
+ *
+ * **Two leading markers, not one.** Measured on Ring, which writes a market and
+ * then a language: `ring.com/eu/en/terms`, `ring.com/fr/fr/terms` and
+ * `ring.com/ca/fr/terms` are the same document as `ring.com/terms`. Stripping
+ * one segment left the shape as `ring.com/en/terms`, which is different from
+ * `ring.com/terms`, so the variants stayed three separate candidates. With the
+ * order that shipped that cost nothing visible, because all three sat at depth
+ * three and the eight slots were already spent; comparing score first is what
+ * exposed it, and reading three other markets' pages for a UK customer is the
+ * same error as reading Ireland's Spotify agreement for a UK subscription,
+ * which is the defect this function was written for.
+ *
+ * A second segment is only stripped when it is itself a market marker, so
+ * `spotify.com/uk/legal/end-user-agreement` keeps `legal` and the document does
+ * not collapse into a different one.
  */
 function documentShape(url: string): { shape: string; locale: string | null } | null {
   let parsed: URL;
@@ -184,7 +219,10 @@ function documentShape(url: string): { shape: string; locale: string | null } | 
   const segments = parsed.pathname.split("/").filter(Boolean);
   const first = (segments[0] ?? "").toLowerCase();
   if (first && LOCALE_SEGMENT.test(first)) {
-    return { shape: `${parsed.host}/${segments.slice(1).join("/")}`, locale: first };
+    let rest = segments.slice(1);
+    const second = (rest[0] ?? "").toLowerCase();
+    if (second && LOCALE_SEGMENT.test(second)) rest = rest.slice(1);
+    return { shape: `${parsed.host}/${rest.join("/")}`, locale: first };
   }
   return { shape: `${parsed.host}/${segments.join("/")}`, locale: null };
 }
@@ -197,9 +235,11 @@ function documentShape(url: string): { shape: string; locale: string | null } | 
  * What a URL is, before anything is done with it.
  *
  * The three parts are carried separately because they answer different
- * questions and are compared in this order: `deprioritised` says whether the
- * document belongs to someone else, `depth` says how far under the root it
- * sits, and `score` says how much of a policy document it is.
+ * questions and are not interchangeable: `deprioritised` says whether the
+ * document belongs to someone else, `score` says how much of a policy document
+ * it is, and `depth` says how far under the root it sits. Which of them is
+ * compared first is decided in `selectPolicyUrls`, where the measurements that
+ * decide it are recorded.
  *
  * **None of them is subtracted from another.** The first version folded depth
  * and the deprioritise penalty into the score, and both could drive a real
@@ -255,22 +295,70 @@ export function scoreUrl(url: string): number {
 }
 
 /**
+ * The score of a document that matches both `terms` and `conditions`.
+ *
+ * Derived from `POLICY_CONCEPTS` rather than written as a number, so a change
+ * to the vocabulary cannot leave the cap behind. It is the canonical English
+ * name for the document this product reads, which is why it is the value at
+ * which "more words" stops meaning "more of a contract".
+ */
+const CONTRACT_SCORE =
+  POLICY_CONCEPTS.length - POLICY_CONCEPTS.indexOf("terms") +
+  POLICY_CONCEPTS.length - POLICY_CONCEPTS.indexOf("conditions");
+
+/**
  * Rank a site's URLs down to the handful worth reading.
  *
  * One representative per document, so a site that publishes its agreement in
  * 292 markets contributes one candidate rather than 292.
  *
  * Order is by class (a document that belongs to someone else goes last,
- * however well it scores), then by depth (the main published terms sit at the
- * root and a programme's own terms sit under it), then by score, then by which
- * market the variant belongs to, then by URL so the result does not depend on
- * the order the sitemap happened to list things in.
+ * however well it scores), then by how much of a contract it is, then by depth,
+ * then by score, then by which market the variant belongs to, then by URL so
+ * the result does not depend on the order the sitemap happened to list things
+ * in.
  *
- * Depth is a ranking key rather than a subtraction, and it is first among the
- * two numeric keys because that is the job it was measured doing: it puts a
- * real retailer's `/warranty` at 9 above its `/loyalty-scheme/terms-conditions`
- * and `/group-rides/terms-and-conditions` at 8. Applying it as a subtraction
- * achieved the same ordering and also drove a deeply-nested contract to 1.
+ * **Score is compared before depth, and it is capped at `CONTRACT_SCORE`. Both
+ * halves of that sentence are measured, and both are needed.**
+ *
+ * Depth first was the order that shipped, and it fails on a large site.
+ * Measured on John Lewis: 87 candidates, and the eight slots fill with pages at
+ * depth 1 and 2, seven of which score 3, while the company's own terms page
+ * scores 32 at depth 3 and is never reached. Measured on Trainline the same
+ * way: its two highest-scoring documents, 15 and 11, land 7th and 8th of ten.
+ *
+ * Score first on its own does not dominate, and the reason is what the cap is
+ * for. A page that extends a real terms page with an extra topic word outscores
+ * the terms page itself: Argos' `/help/terms-and-conditions/black-friday-price-
+ * guarantee` reaches 37 against the 29 of `/help/terms-and-conditions`, and
+ * Evri's `/our-services/evri-video-terms-and-conditions` reaches 32 against the
+ * 29 of `/terms-and-conditions`. Neither carries a deprioritise token, so the
+ * class test does not separate them and neither does the reject list. Capping
+ * at the contract value makes both pairs tie, and depth then puts the contract
+ * itself first.
+ *
+ * The cap does not hide the score. It is still compared, after depth, so of two
+ * documents at the same depth that both clear the cap, the one matching more
+ * concepts still wins.
+ *
+ * Depth stays a key rather than a subtraction. Applying it as a subtraction
+ * achieved the ordering below and also drove a deeply-nested contract to 1,
+ * where the caller's `score > 0` test dropped it.
+ *
+ * **One recorded property does not survive this, and it was wrong before it
+ * was overtaken.** An earlier version of this comment claimed that depth first
+ * put a retailer's `/warranty` at 9 above its `/loyalty-scheme/terms-conditions`
+ * and `/group-rides/terms-and-conditions` at 8. The first of those is a
+ * deprioritise case, so depth was never what decided it, and the second figure
+ * is simply wrong: `terms` and `conditions` are the top two concepts, so that
+ * URL scores 29 and not 8. The check that guarded the claim passed because
+ * depth was compared first, not because the arithmetic put the warranty above
+ * the terms page, and it was carried with `mustFailOn: []`, so it was never
+ * evidence of anything. Under this ordering a nested document that matches
+ * `terms` and `conditions` outranks a root-level page that matches only
+ * `warranty`, which is the same rule that puts John Lewis's terms page first.
+ * The warranty page is still picked on every site measured; it is no longer
+ * picked first. That is the deliberate change, and the check now states it.
  */
 export function selectPolicyUrls(urls: string[], limit = 8): string[] {
   const ranked = urls
@@ -294,6 +382,7 @@ export function selectPolicyUrls(urls: string[], limit = 8): string[] {
     .sort(
       (a, b) =>
         Number(a.deprioritised) - Number(b.deprioritised) ||
+        Math.min(b.score, CONTRACT_SCORE) - Math.min(a.score, CONTRACT_SCORE) ||
         a.depth - b.depth ||
         b.score - a.score ||
         localeRank(a.locale) - localeRank(b.locale) ||
