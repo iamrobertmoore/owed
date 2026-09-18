@@ -793,10 +793,13 @@ Nothing in the output says it stopped early, which is why the limit has to excee
 count has to come from the whole table.
 
 **The sponsor's own check was run, and it is clean of anything that needs fixing.** `npx convex insights
---prod` reports four warnings over 72 hours, each a single OCC retry on a different table: `aiCache` on a
-cache put, `runStatus` in the component's callback pool, `claims` while seeding the worked example, and
-`inboxes` while writing a guest alias. One retry each, and Convex retries these itself, so every one is a
-concurrent write the platform resolved rather than a failure. `storeAlias` is the one worth naming because
+--prod` reports four warnings over 72 hours, each an OCC retry on a different table: `aiCache` on a cache
+put, `runStatus` in the component's callback pool, `claims` while seeding the worked example, and `inboxes`
+while writing a guest alias. Re-run on 18 September, after the crawl work had put 163 counterparties and 519
+messages on the deployment, the same four tables appear and no fifth one does; the counts move with the
+traffic rather than sitting at one, and they read 1 on `aiCache`, 9 on `runStatus`, 5 on `claims` and 5 on
+`inboxes`. Convex retries these itself, so every one is a concurrent write the platform resolved rather than
+a failure. `storeAlias` is the one worth naming because
 it sits on the path a visitor takes: it reads `by_user` and inserts only if nothing is there, so two
 concurrent calls for one guest both find nothing and one aborts and retries, at which point it finds the
 row and returns it. The correct outcome rests on the platform's serializable isolation rather than on
