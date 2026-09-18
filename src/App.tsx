@@ -93,8 +93,9 @@ function SignIn() {
       <div className="signin">
         <h1>Owed</h1>
         <p>
-          Your agent gets its own email address. The paper trail goes there, and it goes
-          and gets what you are owed.
+          Your agent holds the paper trail, so the claim finds you. It notices what you
+          were owed instead of waiting to be told, reads the company's own terms, and
+          asks you before it sends anything.
         </p>
 
         <button className="act primary" onClick={guest} disabled={busy} type="button">
@@ -102,7 +103,7 @@ function SignIn() {
         </button>
         <p style={{ margin: "10px 0 22px", fontSize: 13 }}>
           No account, no password. The guest session is a real one: its own ledger, its own
-          address, its own claims.
+          address, its own claims, and a worked example of four claims already in it.
         </p>
 
         <form onSubmit={submit}>
