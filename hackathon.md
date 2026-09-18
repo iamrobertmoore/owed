@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-16T07:50:55Z
-- **Last updated:** 2026-09-18T06:07:12Z
+- **Last updated:** 2026-09-18T09:10:42Z
 
 ## Log
 
@@ -632,3 +632,55 @@ this" the moment one of them changed. Checked on the deployment rather than
 locally: a fresh guest session seeds eight arrivals, and the worked example's
 price-rise claim renders the block with the sender and the notice's subject
 above the clause (`convex/claims.ts`, `src/ClaimSheet.tsx`, `src/format.ts`).
+
+### 2026-09-18 - d5f6684
+
+**Three commits. The first two were not written down when they landed, and the
+third changed what a judge sees before reading anything.**
+
+`012a869` rewrote the landing tagline. It had led with the mechanism, that the
+agent gets its own email address. The inversion, that the agent holds the paper so
+the claim finds the user, is the product's whole argument, and it was in paragraph
+three of the README and nowhere on the landing page. It is the first sentence now,
+because the first sentence is the only one a visitor who does not click will read.
+
+`c6e2698` gave the last unsourced number in the statistics section a source. The
+sentence sitting under six properly cited figures said the amount was usually £40
+and named no source, and the survey contains no £40 anywhere: its medians are £32
+per incident overall, £41 for services and £15 for items. It carries the survey's
+own median and its own framing now. Every figure in that section has since been
+checked back against the primary source, and `d5f6684` added the seventh: the
+median value of the product was £60 where no action was taken against £100 where
+it was, read from Table 10 rather than off a chart.
+
+**The tagline was the right sentence on the wrong screen, and that is `d5f6684`.**
+The landing page opened on a sign-in card, so the product's own argument was read
+by nobody who did not click. A cold visitor is now signed in as a guest from an
+effect on load, so the judged URL lands on the ledger: four labelled cases, the
+recovered total, the arrivals list, and the visitor's own forward address.
+
+**Nothing about a per-visitor ledger required the click, and that was the
+rationalisation to let go of.** It is the same
+anonymous session the button started, started on load. The ledger stays per-user,
+seeded per-user and scoped. The card survives behind a header action and after a
+deliberate sign-out, recorded per tab in `sessionStorage` under `owed:left`, so a
+sign-out shows the card rather than looping back into a new guest session. The
+card's sub-line changed with it, because it had been selling a click that no
+longer exists.
+
+**Four surfaces carried the retired instruction and every one was false
+afterwards:** the README, `DEPLOY.md`, `YOUTUBE.md` and `SUBMISSION.md`. All four
+say the ledger opens on arrival, and all four are guarded so the sentence cannot
+come back without the sweep failing. Two more sat inside a verification table in
+the deployment notes, and those are marked superseded rather than quietly
+rewritten.
+
+**Checked in a browser rather than from the source, because the claim is about
+what a cold visitor sees.** A fresh context loading the root renders the ledger
+and not the card, with a guest alias provisioned on arrival. A fresh context
+loading `#claim=demo-gate` renders the ledger **and opens the sheet**: clause 11.3
+quoted by its own reference, the block naming the paper it was found from, the
+drafted letter and the approval gate. That path used to stop at the sign-in
+screen, which is the reason the README's four links are worth reading again. The
+served bundle carries the new landing sentence and the new card sub-line, and the
+retired tagline is absent from it (`src/App.tsx`, `src/index.css`, `README.md`).
