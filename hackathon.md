@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-16T07:50:55Z
-- **Last updated:** 2026-09-18T19:32:45Z
+- **Last updated:** 2026-09-18T19:55:00Z
 
 ## Log
 
@@ -1037,3 +1037,35 @@ unclaimed records produced **no new claim**: every reason is about the paper, no
 nothing went wrong that the company's terms commit it to remedy, and the seventh is the price-change notice,
 where the detector now reads the UK agreement and reports that no provision entitles a remedy for it. That is
 the correct answer for a rolling subscription and it means the claim path on real mail is still unexercised.
+
+### 2026-09-18 - 7a44b46
+
+**The generated module registry was committed, because it had stopped describing the tree.**
+`convex/_generated/api.d.ts` is tracked here rather than ignored: the front end imports the typed `api` from it
+at build time, so a clone typechecks without a deploy. Extracting the scorer into `convex/policyUrls.ts` left
+that registry listing every module except the new one, and the three deploys that carried the picker fix
+regenerated it. The change is two lines and the tooling writes them, not me. It is committed rather than
+reverted for a reason worth stating: the next deploy would put it back, and a tracked file that misdescribes
+the source it was generated from is the same defect as a document that misdescribes the code it describes.
+
+**The same pass measured the picker against eleven companies rather than four, and that measurement is the
+useful part.** The runbook's table of which company can be read had been built from the retired scorer, so
+every figure in it came from code the product no longer runs. Re-measured with the shipped picker: Spotify's
+sitemap yields **292** policy-shaped URLs covering **one** document, because 291 of them are the same agreement
+in other markets, and Ring's 46 URLs cover 33 documents. Those two figures are the market collapsing working,
+and they are only visible because the picker is now run as shipped code instead of restated in a harness.
+
+**One limit of the picker is measured, and recorded rather than fixed.** The sort compares path depth before
+score, so a shallow page outranks a deeper one whatever the two scores are. On a site with a large sitemap that
+fills the eight document slots with navigation: John Lewis offers 87 candidates, its first pick scores 3, seven
+of its eight picks score 3, and its actual terms page scores 32 and is not picked at all. Trainline has the same
+shape and is saved by having only 10 candidates, so the eight it picks still include its two highest scoring
+documents. It is not fixed now because reordering the sort is a change to the crawl, which would invalidate the
+crawl notes above and need a re-crawl and a deploy to go with it, and because it affects no company the owner
+has mail from: all six of those pick their own terms page first. Sorting by score ahead of depth was tried
+against the same candidates and does not dominate, because it promotes Argos's Black Friday promotion above its
+terms hub and Evri's video service terms above its general terms.
+
+**What is not measured.** Whether the reordering would help a real claim, since that would have to be measured
+the same way the rest of this work was: pick, crawl, then run the detector. The limit is also measured on the
+picker alone rather than on the ledger, because none of the six crawled companies is affected by it.
