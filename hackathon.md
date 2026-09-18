@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-16T07:50:55Z
-- **Last updated:** 2026-09-18T11:54:28Z
+- **Last updated:** 2026-09-18T16:26:11Z
 
 ## Log
 
@@ -805,3 +805,55 @@ anything in the function, which is why the right result here is a retry and not 
 **What is still not measured.** `recordSent` has not run: all 132 claims are the worked example, and the
 worked example is refused before the wire by design. The outbound half is proven at the provider and
 unproven end to end from the app. The round-trip sheet is what closes it.
+
+### 2026-09-18 - 71af0ff
+
+**The record that could not be opened, reported from the round trip rather than found by me.** The runbook
+asks whether a forward became a record. It did, the row said so, and the row could not be opened. Other rows
+in the same list opened fine, which is the detail that makes this a rendering defect rather than a data one.
+
+**Diagnosed at three layers before anything changed.** The production message row carries a `recordId`; the
+record it points at exists, with the amount, the kind and the reference read out of the paper, under the
+owner's own `userId`; and it has no claim, correctly. The rendering was at fault. The arrivals row was a
+button only where a `claimId` existed and a plain div otherwise, the Records rows were plain divs with a
+default cursor, and the app had no record sheet at all, so a kept message that produced a record and no
+claim had nowhere to go.
+
+**That branch is ordinary rather than rare, and the worked example cannot show it.** A bare order
+confirmation states a price and a date and nothing else, so the reader keeps it as a record and finds no
+claim, which is the designed outcome. Two of the deployment's 142 records are in that state and both are
+real mail; all 108 worked-example records have claims. The sheet now exists and explains the outcome rather
+than leaving the row as a promise with nothing behind it.
+
+**The paper block was empty for the example a judge reads first, because of the link direction.** All 108
+worked-example records carry no `sourceMessageId`: the seed writes message to record rather than record to
+message, so reading the record's own field found nothing. `records.one` now resolves the paper from both
+directions, and the block prints the messages with a note that every one of them is shown, so the reading
+can be checked against them.
+
+**Two more false statements came out of the same pass, both found by measuring the data rather than reading
+the code.** The sheet told every record built from more than one message that it was "Two messages became
+this one record: what was bought, and what went wrong with it", which the component cannot know: 81 records
+carry two messages, and that sentence was a narrative borrowed from the example. It now states the count and
+that all of them are printed. And the crawl status has four values while the sheet had three branches, so
+`skipped` fell into the branch for `pending` and was told "nobody has looked" while its own crawl note read
+"Mapped 199 URLs, none looked like terms". `skipped` means the mapper walked the site and found no page that
+looks like terms, which is a gap in the search rather than a finding about the company, and it is now its
+own sentence instead of an absence the sheet described as `the company's terms have not been read for it`.
+
+**The header offered a signed-in account a button to create an account it already had**, reported in the
+same message. `inboxes.viewer` answers whether the reader is a guest, and the header renders one action:
+`Create an account` for a guest, `Sign out` for an account holder, and nothing until the answer arrives, so
+the label cannot change under a finger already moving toward it. A shared alias is not the same fact as a
+guest, which is why the client cannot infer it from the address.
+
+**Verified on the judged deployment, not in the worktree.** The live bundle is `index-CN9j_fE_.js`, which is
+what a fresh build produces from this tree. In a browser on that bundle the record sheet opens from the
+Records list and from the arrivals row, `Open the claim` reaches the claim sheet, Escape closes and clears
+the hash, and the one arrival that was not kept is still a plain div that opens nothing. The guest header
+shows one label.
+
+**What is not measured.** The no-claim branch has not been seen rendering in a browser, because the only two
+records in that state belong to real accounts and a guest's worked example is four records that all have
+claims. It is evidenced by the data and by the branch's strings being present in the shipped bundle, and the
+round trip is what closes it.
