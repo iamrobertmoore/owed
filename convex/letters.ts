@@ -6,11 +6,9 @@ import {
   internalQuery,
   mutation,
 } from "./_generated/server";
-import { components, internal } from "./_generated/api";
-import { AgentMail } from "@agentmail/convex";
+import { internal } from "./_generated/api";
+import { sendMessage } from "./agentmail";
 import type { Id } from "./_generated/dataModel";
-
-const agentmail = new AgentMail(components.agentmail);
 
 /**
  * The escalation ladder.
@@ -217,37 +215,48 @@ export const approve = mutation({
 });
 
 /**
- * Send an approved letter from the agent's own address.
+ * Everything the send needs, resolved in one read, with the guards attached.
  *
- * Only ever called after a human has approved. One person, one dispute, one
- * thread: nothing here does bulk mail and nothing sends without approval.
+ * The send is an action, because the letter leaves through the provider's HTTP
+ * API and a mutation cannot make a request. An action cannot read the database
+ * either, so the read lives here and the action decides nothing: it is handed
+ * a letter to send or a reason not to.
  */
-export const send = internalMutation({
+export const sendContext = internalQuery({
   args: { claimId: v.id("claims") },
-  handler: async (ctx, args): Promise<{ sent: boolean; reason?: string }> => {
+  handler: async (ctx, args) => {
     const claim = await ctx.db.get(args.claimId);
-    if (!claim) throw new Error(`No claim ${args.claimId}`);
+    if (!claim) {
+      return { ready: false as const, reason: `No claim ${args.claimId}` };
+    }
 
     // Belt and braces. `approve` already refuses a demo row, but this is the
     // only function in the product that can put mail on the wire, and it
     // should not be able to transmit the worked example even if a later
     // caller forgets the guard above it.
     if (claim.demoKey) {
-      return { sent: false, reason: "Worked example, so nothing is transmitted" };
+      return {
+        ready: false as const,
+        reason: "Worked example, so nothing is transmitted",
+      };
     }
 
     if (claim.stage !== "awaiting_approval") {
-      return { sent: false, reason: `Claim is ${claim.stage}` };
+      return { ready: false as const, reason: `Claim is ${claim.stage}` };
     }
 
     const inbox = await ctx.db
       .query("inboxes")
       .withIndex("by_user", (q) => q.eq("userId", claim.userId))
       .unique();
-    if (!inbox) return { sent: false, reason: "No inbox for this owner" };
+    if (!inbox) {
+      return { ready: false as const, reason: "No inbox for this owner" };
+    }
 
     const counterparty = await ctx.db.get(claim.counterpartyId);
-    if (!counterparty) return { sent: false, reason: "No counterparty" };
+    if (!counterparty) {
+      return { ready: false as const, reason: "No counterparty" };
+    }
 
     // The most recent draft on this claim is the one to send.
     const draftMessage = await ctx.db
@@ -256,46 +265,162 @@ export const send = internalMutation({
       .filter((q) => q.eq(q.field("direction"), "outbound"))
       .order("desc")
       .first();
-    if (!draftMessage) return { sent: false, reason: "Nothing drafted" };
+    if (!draftMessage) {
+      return { ready: false as const, reason: "Nothing drafted" };
+    }
 
-    const to = counterparty.complaintsAddress ?? `complaints@${counterparty.domain}`;
     const rung = ladderFor(claim.rung);
 
-    const outboundId = await agentmail.sendMessage(ctx, inbox.agentmailInboxId, {
-      to,
+    return {
+      ready: true as const,
+      // The address the letter goes out from. For a guest that is an alias on
+      // the shared inbox, and the provider takes an address in the path as
+      // readily as an inbox id, which is why the app stores the address there.
+      inboxId: inbox.agentmailInboxId,
+      to: counterparty.complaintsAddress ?? `complaints@${counterparty.domain}`,
+      counterpartyName: counterparty.name,
       subject: draftMessage.subject,
       text: draftMessage.text,
       // Without this the letter goes out from the shared inbox and the reply
       // comes back to the bare shared address, which is no owner's
       // `inboxes.address`, so routing by address finds nobody. The reply then
-      // resolves by the `claim-<id>` label instead, but setting `replyTo` to the
-      // owner's own address means the ordinary address path works too and the
-      // label is a safety net rather than the only route home.
+      // resolves by the `claim-<id>` label instead, but setting `reply_to` to
+      // the owner's own address means the ordinary address path works too and
+      // the label is a safety net rather than the only route home.
       replyTo: inbox.address,
       labels: ["owed", `claim-${args.claimId}`, rung.kind],
+      rung: claim.rung,
+      kind: rung.kind,
+      waitDays: rung.waitDays,
+    };
+  },
+});
+
+/**
+ * Send an approved letter from the agent's own address.
+ *
+ * Only ever called after a human has approved. One person, one dispute, one
+ * thread: nothing here does bulk mail and nothing sends without approval.
+ */
+export const send = internalAction({
+  args: { claimId: v.id("claims") },
+  handler: async (ctx, args): Promise<{ sent: boolean; reason?: string }> => {
+    const letter = await ctx.runQuery(internal.letters.sendContext, {
+      claimId: args.claimId,
     });
+    if (!letter.ready) return { sent: false, reason: letter.reason };
+
+    const result = await sendMessage(letter.inboxId, {
+      to: letter.to,
+      subject: letter.subject,
+      text: letter.text,
+      replyTo: letter.replyTo,
+      labels: letter.labels,
+    });
+
+    if (!result.ok) {
+      // The claim is left at `awaiting_approval` so the owner can press send
+      // again once the fault is fixed, and the timeline carries what the
+      // provider actually said rather than that something went wrong.
+      await ctx.runMutation(internal.letters.recordSendFailed, {
+        claimId: args.claimId,
+        code: result.code,
+        detail: result.detail,
+      });
+      return { sent: false, reason: result.detail };
+    }
+
+    // A 2xx without a message id is not a send. The provider's own id is what
+    // a reply quotes back, so a letter recorded without one would be a row
+    // that can never be matched to its answer.
+    const providerMessageId = result.value.message_id ?? "";
+    if (!providerMessageId) {
+      await ctx.runMutation(internal.letters.recordSendFailed, {
+        claimId: args.claimId,
+        code: "no_message_id",
+        detail: "The provider accepted the letter without returning a message id.",
+      });
+      return { sent: false, reason: "No message id from the provider" };
+    }
+
+    await ctx.runMutation(internal.letters.recordSent, {
+      claimId: args.claimId,
+      to: letter.to,
+      providerMessageId,
+      counterpartyName: letter.counterpartyName,
+      rung: letter.rung,
+      kind: letter.kind,
+      waitDays: letter.waitDays,
+    });
+    return { sent: true };
+  },
+});
+
+/** The write half of the send: the paper trail, the stage and the timeline. */
+export const recordSent = internalMutation({
+  args: {
+    claimId: v.id("claims"),
+    to: v.string(),
+    providerMessageId: v.string(),
+    counterpartyName: v.string(),
+    rung: v.number(),
+    kind: v.string(),
+    waitDays: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const draftMessage = await ctx.db
+      .query("messages")
+      .withIndex("by_claim", (q) => q.eq("claimId", args.claimId))
+      .filter((q) => q.eq(q.field("direction"), "outbound"))
+      .order("desc")
+      .first();
 
     const now = Date.now();
-    await ctx.db.patch(draftMessage._id, {
-      toAddress: to,
-      providerMessageId: String(outboundId),
-      at: now,
-    });
+    if (draftMessage) {
+      await ctx.db.patch(draftMessage._id, {
+        toAddress: args.to,
+        // The provider's own id now, not the id of a row in a queue. It is
+        // what the answer quotes, so the paper trail can be matched to it.
+        providerMessageId: args.providerMessageId,
+        at: now,
+      });
+    }
 
-    const nextActionAt = now + rung.waitDays * DAY_MS;
     await ctx.db.patch(args.claimId, {
-      stage: claim.rung >= MAX_RUNG ? "escalated" : "sent",
-      nextActionAt,
+      stage: args.rung >= MAX_RUNG ? "escalated" : "sent",
+      nextActionAt: now + args.waitDays * DAY_MS,
       updatedAt: now,
     });
     await ctx.db.insert("events", {
       claimId: args.claimId,
       at: now,
       kind: "sent",
-      detail: `${rung.kind} letter sent to ${counterparty.name}. Next check in ${rung.waitDays} days.`,
+      detail: `${args.kind} letter sent to ${args.counterpartyName}. Next check in ${args.waitDays} days.`,
     });
+  },
+});
 
-    return { sent: true };
+/**
+ * The letter did not leave.
+ *
+ * Recorded as a note rather than as a send, because the timeline is read back
+ * to a judge and "sent" would be a false statement about what happened. The
+ * claim stays where it was, so pressing send again is a retry rather than a
+ * second dispute.
+ */
+export const recordSendFailed = internalMutation({
+  args: {
+    claimId: v.id("claims"),
+    code: v.string(),
+    detail: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.insert("events", {
+      claimId: args.claimId,
+      at: Date.now(),
+      kind: "note",
+      detail: `The letter did not leave the agent's address. The provider answered ${args.code}: ${args.detail}`,
+    });
   },
 });
 

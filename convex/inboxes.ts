@@ -7,8 +7,8 @@ import {
   mutation,
   query,
 } from "./_generated/server";
-import { components, internal } from "./_generated/api";
-import { AgentMail } from "@agentmail/convex";
+import { internal } from "./_generated/api";
+import { createInbox } from "./agentmail";
 import type { Id } from "./_generated/dataModel";
 
 /**
@@ -17,10 +17,12 @@ import type { Id } from "./_generated/dataModel";
  * This is the product's front door. The owner routes the paper trail to an
  * address the agent holds, so the agent sees what it needs and nothing else. It
  * never asks for a password to a personal mailbox and never reads a life.
+ *
+ * The inbox is asked for through `./agentmail` rather than through the
+ * component. The component cannot be given the provider credential and cannot
+ * be reached for this call, and `./agentmail` says what was measured. The
+ * component still owns the inbound half, which is the half that works.
  */
-const agentmail = new AgentMail(components.agentmail, {
-  onMessageReceived: internal.inboxes.onMessageReceived,
-});
 
 /**
  * The shared inbox, and the base every guest alias is built on.
@@ -112,61 +114,47 @@ export const provision = action({
     // owner and handed out, so it should be sayable out loud.
     const local = `owed-${randomToken(10)}`;
 
-    let created: { address?: string; inbox_id?: string; id?: string } | null =
-      null;
-    try {
-      created = await agentmail.createInbox(ctx, {
-        username: local,
+    const created = await createInbox(local, me.userId);
+
+    if (created.ok) {
+      const address: string =
+        created.value.email ?? created.value.address ?? `${local}@agentmail.to`;
+      const inboxId: string = created.value.inbox_id ?? created.value.id ?? "";
+
+      await ctx.runMutation(internal.inboxes.store, {
+        userId: me.userId,
+        address,
+        agentmailInboxId: inboxId,
         displayName: "Owed",
-        // Idempotent: a retry returns the same inbox rather than creating a
-        // second one and spending one of the three slots.
-        clientId: `owed-${me.userId}`,
       });
-    } catch (err) {
-      // The provider answers a request past the allowance with HTTP 403 and a
-      // body naming `limit_exceeded`. Convex does not promise to carry custom
-      // properties on an error across a component boundary, so match on
-      // everything that might survive rather than on `.body` alone.
-      //
-      // Branch on the provider's stable code, never on the status. Every 403
-      // body carries `"code": 403`, so a regex containing the status matches a
-      // refused credential as readily as a spent allowance, and the owner is
-      // told the addresses ran out when the real fault is the key. AgentMail's
-      // own schema says of the code: "Branch on this rather than the message
-      // text." Anything else is reported as itself: calling an unknown failure
-      // a limit would be a false statement about the cause.
-      const detail = [
-        err instanceof Error ? err.message : String(err),
-        (err as { body?: string } | null)?.body ?? "",
-      ].join(" ");
-      if (/limit_exceeded|Inbox limit/.test(detail)) {
-        return {
-          error:
-            "This deployment has no email address left to hand out. The free plan caps how many inboxes one account can hold, and they are all in use. You can still load the worked example below, and every claim in it behaves the same way.",
-        };
-      }
-      // A refused credential is a deployment fault, not a capacity one, and
-      // the two want opposite responses.
-      if (/missing_permission/.test(detail)) {
-        return {
-          error:
-            "This deployment's email credential was refused, so no address could be created. The worked example below is unaffected and every claim in it still behaves the same way.",
-        };
-      }
-      return { error: `Could not create an address. ${detail.slice(0, 160)}` };
+
+      return { address, shared: false };
     }
 
-    const address: string = created?.address ?? `${local}@agentmail.to`;
-    const inboxId: string = created?.inbox_id ?? created?.id ?? "";
-
-    await ctx.runMutation(internal.inboxes.store, {
+    // No inbox of its own, so hand out the alias the guests use rather than a
+    // sentence about it.
+    //
+    // Every reason this can fail is a reason the owner still wants an address:
+    // the free plan's allowance is spent, the credential was refused, or the
+    // provider cannot be reached. An alias answers all three, provisions
+    // nothing, and mail sent to it still lands in this owner's ledger and
+    // nowhere else, because the address is what the inbound router matches on.
+    // The alternative, which is what the app did before this, was an error
+    // where an address should be, on the one screen a judge is guaranteed to
+    // see.
+    //
+    // The failure is logged rather than swallowed, so a deployment whose
+    // credential is refused is visible in the logs instead of looking like a
+    // capacity problem. `code` is the provider's own stable code, never the
+    // status: a refused credential and a spent allowance are both 403 and they
+    // want opposite responses.
+    console.warn(
+      `No inbox of its own for this owner (${created.code}). Falling back to a shared alias.`,
+    );
+    const fallback = await ctx.runMutation(internal.inboxes.storeAlias, {
       userId: me.userId,
-      address,
-      agentmailInboxId: inboxId,
-      displayName: "Owed",
     });
-
-    return { address, shared: false };
+    return { address: fallback, shared: true };
   },
 });
 

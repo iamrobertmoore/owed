@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as agentmail from "../agentmail.js";
 import type * as ai from "../ai.js";
 import type * as aiCache from "../aiCache.js";
 import type * as auth from "../auth.js";
@@ -31,6 +32,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  agentmail: typeof agentmail;
   ai: typeof ai;
   aiCache: typeof aiCache;
   auth: typeof auth;
