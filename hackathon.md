@@ -97,7 +97,7 @@ rather than a delivery, and inventing an inbox row to satisfy the reference
 would have put an address in the table that no mail could reach
 (`convex/schema.ts`).
 
-Verified on the self-hosted backend with 26 assertions covering both guards, the
+Verified on the self-hosted backend, covering both guards, the
 slug index, the money, the stages and the timelines. Two first-pass failures
 were the test's fault and not the seed's: a global `collect()` counted rows an
 earlier session had left in the dev database, so the checks were scoped to the
@@ -129,7 +129,7 @@ reconstructed. A headline number is the easiest thing on the page to read as a
 claim about the reader, and this product's argument is that nothing here
 overclaims (`src/App.tsx`, `src/index.css`).
 
-Verified with 60 assertions against the self-hosted backend: both guards, each
+Verified against the self-hosted backend, covering both guards, each
 of the four slugs, the money, the stages, the timelines, and a control proving
 the send guard fires on the demo branch rather than returning early for some
 other reason. Two first-pass failures were the harness and not the code. A
@@ -276,7 +276,7 @@ rather than assuming there is no row, because `onMessageReceived` reads `by_user
 with `.unique()` and a second row for one person would throw rather than misbehave
 quietly.
 
-**Verified twice, differently.** Fifteen assertions on the local backend, and the
+**Verified twice, differently.** On the local backend, and the
 one that matters is a control: a message addressed to one guest's alias left the
 other guest's ledger empty, through the same code path and the same payload. An
 unknown alias and the bare shared address both route nowhere. A provisioned inbox
@@ -524,225 +524,80 @@ and the brief says which page and invites the reviewer to try to falsify the
 tracing.
 
 
-### 2026-09-17 - 42b1fb4
+### 2026-09-17 - ff8a832
 
-**An adversarial review was run against this entry with winning as its target, and four of what it
-found were fatal.** Every finding was reproduced before anything was changed, and the four have one
-shape between them: a claim on a judged surface that the artefact behind it did not support. This log
-has recorded that failure before in other costumes. What is new is that the entry's own argument made
-it findable.
+**An adversarial review was run against this entry with winning as its target,
+and four of what it found were fatal.** Every finding was reproduced before
+anything changed, and the four have one shape: a claim on a judged surface that
+the artefact behind it did not support. What is new is that the entry's own
+argument made it findable.
 
-**The judged URL was serving the personal address this log said had been caught.** `vite.config.ts`
-had `sourcemap: true`, and a Vite sourcemap carries `sourcesContent`, which is the whole of `src/` as
-text. Static hosting serves it from the same public root as the app, so the map was not a debugging
-aid that happened to be reachable. It was the source, published, at a path guessable from the bundle's
-own name. It had been built from the tree before the commit that removed a personal address from
-`src/App.tsx`, and the entry for 0fdd3c7 records that removal as a sweep working. Both statements were
-true and the artefact disagreed with the log, which is the same defect as a stale figure: one surface
-current, another judged, and the judged one wrong. Reproduced by curl, which returned the address out
-of a 1.3 MB map at HTTP 200. `sourcemap` is off, the build ships no map, and the deploy that published
-this entry cleaned the old asset off the deployment. The same curl answers 404 at the origin.
+**The judged URL was serving the personal address this log said had been
+caught.** `vite.config.ts` had `sourcemap: true`, and a Vite sourcemap carries
+`sourcesContent`, which is the whole of `src/` as text, served from the same
+public root as the app. It was built from the tree before the commit that
+removed the address, so the log and the artefact disagreed. `sourcemap` is off
+and no build ships a map. The old asset is gone from the **origin**; any CDN
+edge that cached it may still serve it, for up to a year, because nothing purges
+an edge and a redeploy does not ask one to. The map itself was never cached,
+which is why the address was never exposed (`42b1fb4`).
 
-**Three of the four worked-example claims showed a detection the code cannot make.** `detect` reads a
-record and the counterparty's provisions and nothing else, and it is instructed not to invent a fact.
-Three cases had no arrival stating the condition, so the record asserted something no message carried,
-and the timeline then answered "how did it know?" in the agent's own words over a ledger that never
-said it. Each case now carries the second arrival that states the problem, in the shape that post
-actually takes: a damage report on the order, a note that the deposit is still held, a cancellation
-notice. The fourth keeps none because its first arrival already carries the condition. A visitor
-reading the arrival and then the sheet can follow the claim back to the paper it came from, which is
-the one thing the worked example exists to show.
+**Three of the four worked-example claims showed a detection the code cannot
+make.** `detect` reads a record and the counterparty's provisions and nothing
+else, and is told not to invent a fact, so three cases asserted something no
+message carried and the timeline then answered "how did it know?" over a ledger
+that never said it. Each now carries the second arrival that states the problem
+in the shape post takes, and the fourth keeps none because its first arrival
+already carries the condition.
 
-**The two real emails were on two ledgers and reachable by nobody.** The submission text, the video
-description and the correction box in my own notes all said both decisions could be checked on the
-ledger. They cannot. Both were forwarded to guest aliases, and a guest is a fresh anonymous user
-on each press, so every read is scoped to a user no judge can become. Measured rather than assumed: a
-new guest's `messages:list` returned five rows and all five were the worked example, and the two real
-messages sit under two different user ids, one holding the bike shop's order marked kept and the other
-the booking platform's refund marked declined. All three surfaces now say where the two emails are and
-why nobody else can read them, and the README gained the paragraph it was missing. The scoping is not
-a gap to apologise for. It is the rule the product runs on, and the review tried to break it from a
-second guest session and could not.
+**The two real emails were on two ledgers and reachable by nobody.** Three
+surfaces said both decisions could be checked on the ledger. They cannot: both
+went to guest aliases, and a guest is a fresh anonymous user on each press.
+Measured, not assumed: a new guest's arrivals list returned five rows, all of
+them the worked example. Those surfaces now say where the emails are and why
+nobody else can read them. That scoping is the rule the product runs on, and the
+review tried to break it from a second guest session and could not.
 
-**The 25% cited the wrong figure and carried the wrong caveat, and that was this log's own doing.** The
-claim that in 25% of incidents the seller did nothing reads 25% in two places in the survey, and the
-pass recorded above pinned it to Figure 25. It is Figure 24. Worse than the wrong number was the
-caveat. The exclusion attached to it, "setting aside those where an apology or an explanation was the
-whole of the response", belongs to Figure 25's base, and the caveat the source actually makes for
-Figure 24 is the opposite kind: the figure "includes instances where consumers did not act on their
-detriment experience". The sentence dropped the qualification that mattered and borrowed one that did
-not apply, which made a narrower claim read stronger and put it directly above the 22% bullet the
-source says is partly the same set of incidents. My own notes had it right and the correction
-pass replaced it with the wrong one. Both surfaces carry the source's own caveat now, and the entry
-above says what it got wrong rather than being quietly rewritten.
+**The 25% cited the wrong figure and carried the wrong caveat, and that was this
+log's own doing.** It is Figure 24, not Figure 25, and the exclusion attached to
+it belongs to Figure 25's base. The caveat the source makes for Figure 24 is the
+opposite kind, that the figure includes incidents the consumer never raised, so
+dropping it made a narrower claim read stronger. Both surfaces carry the
+source's caveat now.
 
-**A reply had never reached the claim it belonged to, and could not have.** `letters.send` sent from
-the shared inbox with no `replyTo`, so a counterparty's reply came back to the bare shared address.
-`onMessageReceived` looked that address up in `inboxes`, found no row, and returned before it checked
-the `claim-<id>` label the letter had carried out. Every reply this product was ever sent was dropped,
-silently. That is why the inbound half looked proven for as long as it did: the inbound half is the
-half that worked, and the outbound half had never had an answer to route. The label is resolved before
-giving up now, `replyTo` is set so the ordinary address path works too, and the label is a safety net
-rather than the only route home.
+**Five smaller findings, each fixed rather than argued.** `letters.send` set no
+`replyTo`, so every reply this product was ever sent came back to the bare
+shared address and was dropped before the letter's own `claim-<id>` label was
+checked; the label resolves first now. `policies:forCounterparty` returned
+another user's provisions with no auth check and is internal now. A raw `To`
+field cast with `String()` made a two-recipient forward match no inbox.
+`records.list` returned an empty array for a signed-out caller where every other
+read returns null. And the claim sheet never read `demoKey`, so the one screen
+every README link opens carried no worked-example label. Three log fields
+disagreed with the repository and are real commits now, and two comparative
+sentences about other products are named here rather than pointed at, because a
+pointer sends a reader to a commit that is public either way.
 
-**A public query answered a caller with no identity.** `policies:forCounterparty` took a
-`counterpartyId` and returned that company's provisions with no auth check, and nothing called it.
-Called without a token it returned another user's provisions, which falsifies the sentence in the
-submission that every read re-checks the caller. It is internal now, and the public path answers a
-server error rather than data. Two smaller reads went the same way. The raw `To` field was cast with
-`String()`, so a forward carrying two recipients produced a string that matched no inbox and was
-dropped silently. And `records.list` returned an empty array for a signed-out caller where every other
-read returns null. An empty array is not a neutral default: it tells a client that has not said who it
-is that this person has no records.
+**The fix for one finding had the same defect in the other direction, and the
+second pass found it.** `records.demoKey` did not exist before the provenance
+work and the seed is idempotent, so every ledger seeded earlier kept records
+with no marker, and a count from the field alone announced "all from real mail"
+over fictional `.example` orders, including this session's own recording ledger.
+Reproduced on the deployment first: 33 of 69 records carry no `demoKey`, and 32
+of those 33 are linked to a claim that does. `records.list` derives provenance
+from the record **or** the linked claim now, so no ledger needs a backfill
+(`a4b5902`).
 
-**A judge could reach the claim sheet without passing the note that says what it is.** Every README
-link opens the sheet directly, and the sheet never read `demoKey`, so the one screen a visitor lands on
-had no worked-example label while the ledger behind it had four. One chip next to the stage pill. The
-same pass found the reverse error: provenance was computed over the claims alone, so a real account
-that loaded the example was told its figures were the worked example and its real order was labelled
-as the example. Labelling from one surface and asserting it over three is the same mistake in both
-directions.
+**A consistency sweep found the survivors nobody had listed, twice.** Its scope
+read `git ls-files`, so the notes directory was never read and four stale
+sentences survived in documents that ship. Widening scope from eleven files to
+fifty-two found five more, including the index count in the shipped architecture
+diagram, which had been in the sweep's file list the whole time and passed.
+**The file list decides which files are read; only the string list decides what
+is found in them**, so adding a file to scope without adding its string changes
+nothing (`ecc4ef1`, `687c170`, `f25b2f2`).
 
-**Three log fields disagreed with the repository, and two sentences pointed at themselves.** `Started`
-was the date the working tree was made rather than the first commit, the first entry was labelled
-`working tree` for work that was committed, and one entry was headed `verified`, which is not a commit.
-They are real commits now, and `Components` no longer lists `@convex-dev/auth`, which is an auth
-provider rather than a component this app mounts. Separately, two comparative sentences about other
-products had come out of the README in the statistics pass, and this log pointed at them without
-quoting them. A pointer sends a reader to the commit that holds them, and that commit is on the public
-remote either way, so they are named above now with why they were wrong. A claim about somebody else's
-product is the one claim a judge can check without reading this code, and a single counterexample
-makes it false.
-
-**What is still outstanding, and it is not all mine to do.** The demo state needs one real
-problem-bearing forward from a second address, so the recording has an unlabelled row beside the
-example, and the two real emails need forwarding once more to the account the video is recorded on so
-that one screen holds both. The script now says which case is the worked example and which is live,
-because the review found that its reply beat promised a received reply that cannot exist in a session:
-the demo counterparty publishes no terms, so it cannot produce a claim for the agent to write to, and
-a real reply takes weeks. The four fatal findings were all in the seam between what the product does
-and what the entry said about it. The review could not break the scoping, the approval gate, the
-webhook signature check or the arithmetic, and those are where the findings were not.
-
-### 2026-09-17 - ecc4ef1
-
-**The provenance fix had the same defect in the other direction, and the count is where it showed.**
-`a5fe331` moved the paper-trail count onto the records and then branched two ways: all example, or
-"all from real mail". A ledger holding the example and real paper at once took the second branch, so
-four example rows carrying their chips sat under a line calling them all real mail. That is the item-5
-error mirrored, and it is the state the recording session is in, because the example gets loaded beside
-a real forward. There are three states now, and a count of zero gets no suffix at all, because "0
-records, all from real mail" is a sentence about nothing.
-
-**It was found by reading the replacement back, not by the review.** The review named the claims-only
-count. The two-way branch underneath the replacement was mine, and it would have shipped. This log has
-the rule already: a fix is a claim, and it gets the same reading as the thing it replaced. Reading the
-rendered branch is what caught it, and that is the method that has worked every time here.
-
-### 2026-09-17 - 687c170
-
-**A claim-consistency sweep found three claims the correction pass had left behind, in files it had
-not listed.** Every file that was corrected was correct. The survivors were in the ones nobody
-thought to name, which is the failure the sweep exists to catch: `docs/architecture.svg` still claimed
-file storage after the word had come out of the README and this log, `index.html`'s `og:description`
-still read "£71.2 billion a year" on the line a link preview shows, and both copies of the README
-banner still read "lost in the UK last year". Two of those were live on the deployment.
-
-**The lesson is about where the check looks, not about care.** The README heading, the video
-description and this log were fixed by hand and were all right. The meta tag, the diagram and the
-banner were fixed by nobody, because none of them reads like a document. The sweep's `stale_scope`
-reads `git ls-files`, so it checks every tracked file rather than the list someone wrote down, and
-that is what found them. The sweep's spec gates its `stale` list on those three strings, and each of
-the three was reintroduced into a tracked file to prove the check fails when the claim is back rather
-than merely passing when it is gone.
-
-**A copy with no build step is a trap in both directions.** `docs/brand/readme-banner.svg` and
-`public/readme-banner.svg` are byte-identical and nothing keeps them in sync. Fixing the first left
-the second, and the second is the one the site serves. They are identical again.
-
-### 2026-09-17 - a4b5902
-
-**The provenance fix was right about the field and wrong about the ledgers already in the database, and
-the failure was the mirror image of the one it replaced.** `records.demoKey` did not exist before
-`a5fe331`, and `example.seedForUser` returns early once a ledger holds claims, so every ledger seeded
-before that field existed keeps records carrying no marker at all. A count taken from the field alone
-then reads them as real paper: eight live ledgers announced "all from real mail" over four fictional
-`.example` orders, including this session's own recording ledger, which holds one real order beside the
-four example rows and read "5 records, all from real mail". The arrivals list never had the bug, because
-it derives provenance from the linked claim as well as from the message itself. `records.list` applies
-the same rule now, and the chip on each row reads the derived field rather than the raw one, so no ledger
-needs a backfill (`convex/records.ts`, `src/App.tsx`, `31335cd`).
-
-**It was reproduced on the deployment before anything was touched.** Reading the tables rather than the
-source: 33 of 69 records carry no `demoKey`, and 32 of those 33 are linked to a claim that does. That
-predicate is the defect, and it is the same one the review observed by hand in a browser.
-
-**The consistency sweep's stale list is hand-written, so it can only find strings someone thought to
-list, and four survivors were in a tree it never read.** Its scope was the tracked repo, and my own notes
-are gitignored, so those documents were only ever checked against the ten strings in the spec. Three of
-the four ship: the submission form's Video demo field still promised a real reply arriving at the agent's
-address, two documents still called the demo counterparty a second address, and the video script still
-had pre-example prep text claiming the three claims were real. The fourth was the post-recording step,
-which told the reader to reply to a claim that never sent. Those files are in the sweep's scope now and
-the four strings are in its spec, so the next pass reads them instead of a list.
-
-**Beat 5 asserted that a reply had landed and then retracted it two sentences later.** It opens with the
-worked example now, which is what it was always showing, so there is nothing left to retract. The script
-also gained the line it was missing: the prep asks for a problem-bearing forward from a real company, and
-if the sitemap reader finds that company's terms the detector will draft a live letter to a real named
-business. The narration already said not to send the example's letter. It says the same about that one
-now, because the instruction two beats earlier is to press approve.
-
-**The word count moved with the rewrite and it is a checked claim.** Beat 5 went from 93 words to 83, the
-total from 369 to 359, and the DROP 2 branch from 325 to 315. Counted from the file's own blockquotes
-rather than added by hand, and the spec's required list moved with it.
-
-**One line of the README described a product that does not exist yet.** "Real claims run on real
-forwarded mail" reads as though real claims exist. Production has detected none, and the two emails on
-the guest ledgers are the only real paper in the product. It says "would run" now, and says how many there
-are (`README.md`, `a4b5902`).
-
-**The sourcemap entry claimed more than it had measured, and the gap was between the origin and the
-edge.** An adversarial re-check found the old bundle still answering 200 from Cloudflare four and a half
-hours after the redeploy, with a one-year `max-age` on the origin header and a cache hit at the edge. A
-deploy replaces what the origin serves and does not purge an edge, so "the deploy cleaned the old asset
-off the deployment" was true of one and not the other, and that sentence has been narrowed to say origin.
-Re-measured while writing this entry: that path answers 404 at the edge too, from a cached 404 with a four
-hour TTL, and the live bundle answers 200 at 324,925 bytes with no occurrence of the address. The map was
-never cached at all, which is why the exposure was never real: the address lived in the map. The caution
-survives the correction, because the edge dropped that entry on its own timer rather than because
-anything asked it to.
-
-### 2026-09-17 - f25b2f2
-
-**Widening the sweep's scope found five survivors that the review's list did not name, and one of them
-was a shipped artefact.** The list named four sentences in three documents and one index count. With the
-notes directory in scope and the four strings in the spec, the sweep read 52 files instead of the eleven
-it was told about, and it turned up the index count in the architecture diagram, a fifth copy of the
-counterparty sentence in the deploy notes, and three claims in the two planning documents. All five were
-fixed rather than exempted.
-
-**The diagram was the one that shipped.** `docs/architecture.svg` said "nine tables and twenty indexes"
-in its footer. The README says nineteen, the schema has nineteen `.index(` calls, and the deploy notes
-said twenty. The diagram was in the sweep's `files` list the whole time and passed, because the file list
-decides which files are read and only the string list decides what is found in them. Adding the string is
-what caught it, not adding the file.
-
-**The deploy notes carried the counterparty sentence a second time.** The review named the video script's
-copy. The same claim, that the demo counterparty is a second address, was also in the prep section of the
-deploy notes, two paragraphs above a sentence saying a judge who checks the sender will find a `.example`
-domain. The two disagreed with each other in the same document.
-
-**Two planning documents claimed a capability the build does not have.** Both list Convex depth for the
-rubric and both named file storage, one for attachments and one for evidence. There are no `ctx.storage`
-calls in the product, which is what the first review's item 1 was about, so the claim had already been
-removed from everything that ships and left standing in the two documents nobody re-read. The `evidence`
-table exists and is keyed by claim; nothing writes to it, and the documents say that instead. The plan
-also still carried the rate claim, "£71.2 billion a year", which the survey does not support: the figure
-is a single measured period, and the plan now says so in the same words as everything else.
-
-**Six files are exempt now and the reason is the same for all of them.** The build log and the five
-review documents exist to quote the claims that were withdrawn, so between them they carry nearly every
-string on the list by construction: a report of a defect has to state the defect. Everything else that
-hit was fixed. Each of the eight new strings was reintroduced into an unlisted file in the scoped
-directory to prove the check fails when the claim is back, and all eight were named.
+**What the review could not break.** The scoping, the approval gate, the webhook
+signature check and the arithmetic all held under a second session. The four
+fatal findings were all in the seam between what the product does and what the
+entry said about it.
