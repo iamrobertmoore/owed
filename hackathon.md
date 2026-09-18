@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-16T07:50:55Z
-- **Last updated:** 2026-09-18T19:55:00Z
+- **Last updated:** 2026-09-18T22:22:00Z
 
 ## Log
 
@@ -1072,3 +1072,68 @@ terms hub and Evri's video service terms above its general terms.
 **What is not measured.** Whether the reordering would help a real claim, since that would have to be measured
 the same way the rest of this work was: pick, crawl, then run the detector. The limit is also measured on the
 picker alone rather than on the ledger, because none of the six crawled companies is affected by it.
+
+### 2026-09-18 - fe79311
+
+**The picker compared path depth before score, and on a large site that filled every slot with navigation.**
+John Lewis offers 87 candidates, the eight slots fill with pages at depth 1 and 2, seven of which score 3, and
+the company's own terms page scores 32 at depth 3 and is never reached. Trainline had the same shape and was
+saved only by having ten candidates. The entry above recorded this as a measured limit rather than a defect,
+because reordering changes the crawl and so needs a re-crawl and a deploy, and because it affected no company
+the owner has mail from. That reasoning was honest and the conclusion was still wrong: a picker that cannot
+reach the terms page on a site with a large sitemap is a defect wherever it happens, and the price of fixing it
+turned out to be a re-crawl rather than a redesign.
+
+**Sorting by score first is the obvious fix and it is not sufficient, which is why the change is a cap.** A page
+that extends a real terms page with one more topic word outscores it: Argos' black-friday price-guarantee
+sub-page scores 37 against its own terms hub at 29, and Evri's video terms score 32 against
+`/terms-and-conditions` at 29. Neither carries a deprioritise token, so neither the class test nor the reject
+list separates the pair. The sort now compares the score **capped at the value of a document matching both
+`terms` and `conditions`**, which is 29, then depth, then the uncapped score. Both pairs tie at the cap and
+depth puts the contract first, while two documents at the same depth that both clear the cap are still
+separated by how much of a contract they are. The cap is derived from the concept list rather than written
+down, so it cannot drift from the vocabulary that produces it.
+
+**Two defects were sitting behind the old order and are closed in the same change.** Ring writes a market and
+then a language, so `/ca/en/terms` and `/ca/fr/terms` were separate candidates from `/terms`: 32 of its 46
+candidates carried both segments, and collapsing a second leading locale marker resolves the 46 to eleven
+documents. Sigma's catalogue is `/item/<brand>/<product>/<id>` and its product names contain the word
+"conditions", so product pages were reaching the pick. `item` and `guides` joined the reject list, with `guide`
+and `items` deliberately left alone, because one is the last word of a real Argos page and the other is a
+different token. Sigma's field fell from 39 candidates to 18.
+
+**The fix is proven on the judged deployment by behaviour rather than by the source.** Re-crawling the six
+companies the owner has mail from moved Evri from seven documents read to eight and from 33 provisions to 35,
+and its note now names `/our-services/evri-video-terms-and-conditions` and `/content/refund-policy` where it
+used to name `/environment-policy` and `/public-interest-and-disclosure-policy`. Ring moved from 46 provisions
+to 45. The other four were unchanged. Evri's own terms page is still the first document chosen, which is the
+property the cap exists to hold. Nothing but the ordering could have produced those notes, so this is the
+ordering running on production rather than the ordering in a file.
+
+**A recorded figure was wrong and its check could not have caught it.** The module's comment claimed a nested
+`/group-rides/terms-and-conditions` scored 8; it scores 29, because `terms` and `conditions` are the two
+highest-weighted concepts. The check guarding that claim passed only because depth was compared first, and it
+carried an empty `mustFailOn`, so it was never evidence of anything. It is replaced by a check that asserts the
+new ordering and is required to fail on the old one. The picker's own check now runs four orderings as
+controls: the legacy one, the penalty variant, the order that shipped, and the naive score-first fix.
+
+### 2026-09-18 - 50c2e3c
+
+**The banner on the README's first screen added two rows together and called the sum recovered.** The card
+shows a late delivery credit in amber and a settled delayed flight in green, and its total was both rows added
+up. The app's ledger reads `Recovered £349` for that same worked example, and the palette is not decoration:
+`src/index.css` defines `--recovered: #0e7c5a` as money actually recovered and `--owed: #b5761f` as still
+outstanding, and the card uses exactly those two hexes. A total that includes the amber row is therefore a
+figure the product does not claim, on the one surface a judge reads before any prose: `README.md` line 9
+renders `docs/brand/readme-banner.svg` as an `<img>`, and it is the first thing on the page.
+
+**The settled row and the total are now both £349**, so the card reads £60 owed plus £349 recovered, which is
+£409 claimed with £349 of it recovered. That is what the two colours already said; the fix was to make the
+arithmetic agree with them rather than to change the colours.
+
+**Two copies of the file existed and the first pass edited only one.** The served copy under `public/` is now
+written from the source copy under `docs/brand/` rather than edited a second time, and all three copies, the
+source, the served file and the one fetched back off the live site, hash identically. A guard went into the
+claim sweep in the same pass: the retired total is on the stale list, and each banner file carries the two
+exact attribute runs that render £349, because a bare `£349` would not distinguish the settled row from the
+total on a card that carries both figures.
