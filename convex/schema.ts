@@ -85,7 +85,14 @@ export default defineSchema({
      * provisioned inboxes.
      */
     onSharedInbox: v.optional(v.boolean()),
-    /** Set once the first real message round trip has been proven. */
+    /**
+     * Reserved for the first proven message round trip, and a placeholder
+     * rather than a feature. Measured 18 September 2026: no code outside this
+     * line names `verifiedAt`, and no row in `inboxes` carries it, so nothing
+     * writes it and nothing reads it. Wire it or remove it before the field is
+     * read as a capability, because a schema field whose comment describes when
+     * it is set is indistinguishable from one that is.
+     */
     verifiedAt: v.optional(v.number()),
     createdAt: v.number(),
   })
