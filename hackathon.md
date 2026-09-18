@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-16T07:50:55Z
-- **Last updated:** 2026-09-17T22:12:36Z
+- **Last updated:** 2026-09-18T06:07:12Z
 
 ## Log
 
@@ -601,3 +601,34 @@ nothing (`ecc4ef1`, `687c170`, `f25b2f2`).
 signature check and the arithmetic all held under a second session. The four
 fatal findings were all in the seam between what the product does and what the
 entry said about it.
+
+### 2026-09-18 - 36f610d
+
+**The claim sheet could not show the document the claim was found from, so the
+detection event was asking a question the screen did not answer.** A claim's
+timeline opens with "Found from the paper trail: a price rise notice arrived on
+a contract that has not expired", and the sheet under it listed the
+correspondence on the claim, which is a different set of messages from the
+arrivals the claim was found from. The two were being conflated on one screen,
+and that screen is the one every README link opens.
+
+`claims.detail` now returns `paper`: the inbound messages that became the claim's
+record, walked off `claim.recordId` the way `messages.list` already walks it to
+answer "did this arrival become anything". The sheet prints the sender and the
+subject of each above the clause, and states what the block is evidence of, that
+the agent read this and nothing else about what happened and did not need to be
+told there was a dispute. That sentence is the product's whole argument, and it
+was the one claim on the sheet with nothing behind it.
+
+**It is filtered in memory rather than given an index, and that is deliberate.**
+The schema's index count is a published figure in the README, the architecture
+diagram and the submission, so a new index would make four artefacts wrong to
+save one pass over one person's own messages. The set is bounded by a single
+paper trail.
+
+`senderOf` moved from `App.tsx` to `format.ts` in the same change. Two surfaces
+print a sender now, and two copies of that rule would be two answers to "who sent
+this" the moment one of them changed. Checked on the deployment rather than
+locally: a fresh guest session seeds eight arrivals, and the worked example's
+price-rise claim renders the block with the sender and the notice's subject
+above the clause (`convex/claims.ts`, `src/ClaimSheet.tsx`, `src/format.ts`).
