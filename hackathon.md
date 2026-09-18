@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-16T07:50:55Z
-- **Last updated:** 2026-09-18T22:22:00Z
+- **Last updated:** 2026-09-18T22:55:00Z
 
 ## Log
 
@@ -1137,3 +1137,26 @@ source, the served file and the one fetched back off the live site, hash identic
 claim sweep in the same pass: the retired total is on the stale list, and each banner file carries the two
 exact attribute runs that render £349, because a bare `£349` would not distinguish the settled row from the
 total on a card that carries both figures.
+
+### 2026-09-18 - a05ff4b
+
+**A schema field described when it would be set, and nothing sets it.** `convex/schema.ts` declared
+`verifiedAt` on `inboxes` with the comment "Set once the first real message round trip has been proven".
+Searching the tree for the name returns that one line and the field's own declaration, and no row in
+`inboxes` carries it, so nothing writes it and nothing reads it. The comment described a value that would
+appear rather than what the code does.
+
+**It is the same class of defect the log has recorded before, and the same correction applies.** The record
+sheet was caught three times on 18 September describing a state the data does not support, and each fix said
+what the status means rather than what it was hoped to mean. The claim here is about a field rather than a
+sentence, and the fix is the same one: the comment now says it is a placeholder and carries the measurement
+that showed it.
+
+**The field stays and only the comment changes.** Removing it is a schema change, and whether to wire it to
+the round trip or drop it is not my call, so it is left in place with an honest comment. There is nothing to
+deploy, because the shape of the schema is identical and the live deployment holds the same tables and the
+same indexes. The wording that was withdrawn went onto the claim sweep's stale list in the same pass, so it
+cannot return to the source unremarked.
+
+**What is not measured.** The production message round trip is still outstanding, so there is no value for
+the field to hold and its future is undecided. This change moves no claim and no figure the ledger reports.
