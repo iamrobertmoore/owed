@@ -3,7 +3,7 @@ import { internalAction, internalMutation, internalQuery } from "./_generated/se
 import { components, internal } from "./_generated/api";
 import { FirecrawlClient } from "@firecrawl/firecrawl-convex";
 import { originsFor } from "./domains";
-import { selectPolicyUrls, sitemapUrls } from "./policy-urls";
+import { selectPolicyUrls, sitemapUrls } from "./policyUrls";
 import type { Doc, Id } from "./_generated/dataModel";
 
 /**
@@ -22,7 +22,7 @@ const firecrawl = new FirecrawlClient(components.firecrawl);
 
 /**
  * The scorer that decides which of a company's pages are worth reading, and the
- * sitemap walk that finds them, now live in `policy-urls.ts` and are imported
+ * sitemap walk that finds them, now live in `policyUrls.ts` and are imported
  * above.
  *
  * They moved for one reason. This file cannot be imported outside the Convex
@@ -30,7 +30,7 @@ const firecrawl = new FirecrawlClient(components.firecrawl);
  * that covers them carried its own copy of both instead. The copy passed while
  * the shipped scorer ranked six per-retailer returns guides above Evri's own
  * terms page, and a check that runs a copy of the logic is a check on the copy.
- * `policy-urls.ts` has no Convex import, so the check runs the shipped
+ * `policyUrls.ts` has no Convex import, so the check runs the shipped
  * functions against the real sites.
  */
 
