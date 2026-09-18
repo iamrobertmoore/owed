@@ -53,7 +53,7 @@ Behind it, in the same survey:
 - **In 25% of incidents the seller took no action at all**, a figure that includes the incidents the consumer never raised.
 - **47% of 18 to 29 year olds who experienced detriment** did not act on at least one incident, the highest of any age group.
 
-The barrier is not that people do not know they were wronged. It is that pursuing it costs an evening, and the amount is usually £40. Owed moves that evening onto something that already has the paperwork and does not get bored.
+The barrier is not that people do not know they were wronged. It is that pursuing it costs an evening, and the survey puts the median cost of a single incident, including the value of the time spent chasing it, at £32. Owed moves that evening onto something that already has the paperwork and does not get bored.
 
 ## How it works
 
