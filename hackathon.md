@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-16T07:50:55Z
-- **Last updated:** 2026-09-18T09:40:34Z
+- **Last updated:** 2026-09-18T11:36:00Z
 
 ## Log
 
@@ -710,3 +710,48 @@ header action shows the card; the card's guest button returns to a seeded ledger
 four claims and its own address; and a reload with the flag set shows the card rather
 than minting a new guest. Served bundle `index-DGyWe2Zm.js`, 326,484 bytes
 (`src/App.tsx`).
+
+### 2026-09-18 - f99edd9
+
+**The agent had never been given an address on the judged deployment, and the letter could never have left
+it.** Both were defects in `@agentmail/convex`, and both were measured rather than reasoned about.
+
+The first is at the environment boundary. A Convex component runs isolated from the app's environment, and
+this one declares no environment variables of its own, so there is no way to hand it the credential:
+pushing `app.use(agentmail, { env: { AGENTMAIL_API_KEY } })` is refused with "Component agentmail has no
+env var named AGENTMAIL_API_KEY". Every call it made to the provider came back "AGENTMAIL_API_KEY is not
+set on this Convex deployment". A send enqueued through the component's own public mutation came back
+`status: "failed"` with that message, which is how the send path turned out to be dead rather than merely
+untested.
+
+The second is at the function boundary. `createInbox` is an `internalAction`, and Convex exposes only a
+component's public functions to the parent app, so the reference never resolves. **The component's cached
+inbox table on production held zero rows**, which is what that looks like from outside: no real account had
+ever been given an address. The panel said "Could not create an address. Couldn't resolve
+agentmail.lib.createInbox", and every document that described the real-account path as proven was
+describing a path that had never run.
+
+**Both are fixed in the app, not in the component.** `convex/agentmail.ts` makes the two calls itself with
+the credential the app does hold. The component keeps the half that needs none: verifying the webhook
+signature, deduplicating by event id, mirroring the message and dispatching the callback. The send became
+an action, because a mutation cannot make an HTTP request: the read is `sendContext`, the writes are
+`recordSent`, and the message row carries the provider's own message id rather than the id of a row in a
+queue.
+
+**Measured after the fix, on the judged deployment.** `inboxes:provision` for a real account returned
+`owed-fwz3ythw47@agentmail.to` with `shared: false`; the provider lists that inbox against
+`client_id owed-m17d27n0dg1zp67jbhde31d6498em3wr`, and the app's row matches it. The send endpoint answered
+200 with a `message_id`, and the probe mail was delivered to the shared inbox. The inbound half was already
+live and had been since the day before: the real forward is in the app's `messages` table as `direction:
+inbound`, addressed to `owed+pa37n5u6f6@agentmail.to`.
+
+**What is not yet measured, and the entry says so rather than rounding up.** `recordSent` has not run on
+production, because no real claim has ever reached the approval gate: all 132 claims on the deployment are
+the worked example, and the worked example is refused before the wire by design. The send resolves and
+holds that guard, which is as far as a demonstration goes without sending a letter to a real business.
+
+**Three documents changed with it.** The README said an owner past the plan's allowance gets "a sentence
+explaining why rather than an error trace", which the fallback made false. The round-trip sheet was
+rewritten as a numbered list, because I could not follow its prose and said so. And
+`convex/convex.config.ts` carries the measurement, so the next person to reach for
+`app.use(agentmail, { env })` finds out why it is not there without repeating it.
