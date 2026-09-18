@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-16T07:50:55Z
-- **Last updated:** 2026-09-18T16:26:11Z
+- **Last updated:** 2026-09-18T17:42:38Z
 
 ## Log
 
@@ -857,3 +857,64 @@ shows one label.
 records in that state belong to real accounts and a guest's worked example is four records that all have
 claims. It is evidenced by the data and by the branch's strings being present in the shipped bundle, and the
 round trip is what closes it.
+
+### 2026-09-18 - 617b34d
+
+**The crawler was reading the wrong host, and it had cost two real claims.** The reader is asked for the
+sender's domain, and that domain was what the crawl was pointed at. Companies send from subdomains that
+publish nothing: Spotify's price-change notice arrives from `legal.spotify.com` and Ring's from
+`mail.ring.com`, and neither host serves a sitemap or a policy page. Both crawls were marked `skipped`,
+which was correct about the host and useless about the company, while the terms sat on `spotify.com` and
+`ring.com` the whole time.
+
+**Found by measuring the deployment rather than by reading the code.** Production holds 163 counterparties
+across 39 users and 156 claims, and the owner's 4 claims are the four worked-example ones. Not one of the
+eight real forwards had ever produced a claim, and two of them are textbook mid-contract price rises,
+which is the exact shape the worked example's own price-rise claim is built from, so a shape mismatch was
+not the explanation. The two rows were `legal.spotify.com` and `mail.ring.com`, both `skipped`, with a
+note reading `Looked at 6 URLs (sitemap 0, mapper 1), none looked like terms`. Confirmed in the code
+afterwards: the ingest prompt asks for the sender's domain, and `readCounterparty` took its origin from
+that row.
+
+**The fix tries the company's own site first and the sending host second.** `domains.ts` reduces a host to
+its registrable domain, tolerating a scheme, a path, a port and a userinfo prefix because the value
+arrives from a language model rather than a URL parser. `readCounterparty` walks those origins in turn and
+stops at the first that yields a policy-shaped URL, so the extra map call is only ever spent on an address
+that previously returned nothing at all. `upsertCounterparty` now keys the counterparty on the registrable
+domain, so one company is one row rather than one row per subdomain it happens to send from.
+
+**The rows the bug had already written were repaired rather than left to age.** Before changing anything,
+the scale was measured: of 163 counterparties exactly two carry a domain that is not already its
+registrable form, and reducing them collides with nothing. `normaliseDomains` rewrites those two and leaves
+a row alone if the reduced domain is already taken by the same user, because "the data happens to be safe"
+is not a property the code should rely on. `recrawl` then re-read the three counterparties whose crawl had
+never succeeded, and `redetect` ran the detector over records with no claim. `detect` is not idempotent, so
+restricting it to unclaimed records is what makes running it twice impossible.
+
+**Verified on the judged deployment.** Spotify yielded **29** provisions read from `spotify.com` and Ring
+**27** from `ring.com`, both from the company's own site. The third stale row, an older account's
+`sigmasports.com`, went from `skipped` to 35 provisions. `domains.ts` is checked by a harness that imports
+the shipped module rather than restating it, which is the difference between a test and a copy, and it
+passes 20 cases including all seven domains this deployment holds.
+
+**Six of the eight forwards are refused correctly and the reasons are worth recording**, because they are
+about the paper rather than the product. An order confirmation, a missed-delivery notice and two
+cancellation requests each state no failure the company's own terms commit them to remedy. The two price
+rises now read the right terms and still produce no claim, for a reason that is correct: a price rise on a
+rolling monthly subscription has no exit charge to be released from, which is exactly what makes the
+worked example's price-rise claim work, since that one is a 24-month contract.
+
+**A second defect was found on the way and is not fixed.** Evri's crawl reports success and keeps nothing,
+and the note could not say why, so the note now names the host it read and gives a provision count per
+document. Re-run, the six documents were `/return-a-parcel/argos-returns` and four more of Evri's
+per-retailer guides to sending goods back, and `/terms-and-conditions` was never opened. The document
+picker scores a URL by counting policy-ish words in its path, and `return-a-parcel/argos-returns` contains
+both `return` and `returns`, which scored it 22 against the 17 of the real terms page. The same picker read
+Spotify's creator terms, two audiobook refund policies and a Korea-market cancellation policy for a UK
+subscription, because `agreement` is not in its vocabulary at all and `end-user-agreement` therefore
+scores zero. That is a live defect and the next thing to fix.
+
+**What is not measured.** No real forward has produced a claim, so the claim path on real mail is still
+unexercised, and the entry that will record it does not exist yet. The Evri and document-picker findings
+are measured from production crawl notes and the companies' own sitemaps rather than from a fix, so they
+are evidence of the defect and not evidence of a cure.
