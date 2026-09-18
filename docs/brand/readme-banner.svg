@@ -44,7 +44,16 @@
     <text x="22" y="44" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" fill="#5A626C">lost in the UK in one measured year, after everything people recovered.</text>
   </g>
 
-  <!-- A claim, as the product actually shows one -->
+  <!--
+    A claim, as the product actually shows one.
+
+    The recovered figure is the worked example's own, £349, because the app's
+    ledger reads `Recovered £349` for it and this image is the README's first
+    screen. The total used to be the sum of both rows on this card, which counted
+    the amber one, and amber means still outstanding in the palette the app uses.
+    The two rows now add to £409 claimed, of which £349 is recovered and £60 is
+    not, which is what the colours say.
+  -->
   <g transform="translate(792 68)">
     <rect width="336" height="264" rx="16" fill="url(#card)" stroke="#101418" stroke-opacity="0.10" stroke-width="1.5"/>
 
@@ -60,11 +69,11 @@
     <circle cx="34" cy="150" r="5" fill="#0E7C5A"/>
     <text x="52" y="155" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#101418">Delayed flight</text>
     <text x="52" y="176" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" fill="#6A727C">settled, they conceded</text>
-    <text x="308" y="155" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" font-weight="700" fill="#0E7C5A">£350</text>
+    <text x="308" y="155" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" font-weight="700" fill="#0E7C5A">£349</text>
 
     <line x1="28" y1="204" x2="308" y2="204" stroke="#101418" stroke-opacity="0.10" stroke-width="1.5"/>
 
     <text x="28" y="236" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" font-weight="700" letter-spacing="1.4" fill="#8A929C">RECOVERED</text>
-    <text x="308" y="238" text-anchor="end" font-family="Georgia, 'Times New Roman', serif" font-size="26" font-weight="700" fill="#0E7C5A">£410</text>
+    <text x="308" y="238" text-anchor="end" font-family="Georgia, 'Times New Roman', serif" font-size="26" font-weight="700" fill="#0E7C5A">£349</text>
   </g>
 </svg>
