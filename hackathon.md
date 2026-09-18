@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-16T07:50:55Z
-- **Last updated:** 2026-09-18T17:42:38Z
+- **Last updated:** 2026-09-18T17:57:29Z
 
 ## Log
 
@@ -918,3 +918,27 @@ scores zero. That is a live defect and the next thing to fix.
 unexercised, and the entry that will record it does not exist yet. The Evri and document-picker findings
 are measured from production crawl notes and the companies' own sitemaps rather than from a fix, so they
 are evidence of the defect and not evidence of a cure.
+
+### 2026-09-18 - 0532d43
+
+**The record sheet said the agent had read "this company's published terms", and the crawl cannot promise
+that.** It picks documents by the shape of their URL. Measured on this deployment, Evri's crawl carries the
+status `crawled` and the six documents it read were `/return-a-parcel/argos-returns` and four more of Evri's
+per-retailer guides to sending goods back, with Evri's own terms page never opened. The sentence was
+therefore false about a record a reader can open from the ledger, not about a hypothetical one.
+
+**It now says the agent found the pages that look like their terms and read them.** The crawl note printed
+directly beneath it lists the documents and the provisions each yielded, so the two can be read against
+each other: a reader who sees six per-retailer guides can tell for themselves that the terms were not among
+them, which is the opposite of what the old sentence invited.
+
+**This is the third sentence in this sheet found describing a state the data does not support**, after the
+two-message narrative and the `skipped` branch that stood in for `pending`, and the fix is the same each
+time: say what the status means rather than what it was hoped to mean. All three were found by measuring the
+deployment. None was visible by reading the component, because the component was consistent with itself.
+
+**Verified on the judged deployment.** The live bundle is `index-C18N7m9H.js`, served from
+`fantastic-hamster-482.convex.site`, and it carries the corrected clause and no longer carries the old one.
+The gates are green on the same tree: the claim-consistency sweep passes with the new clause guarded as a
+required string, the hygiene sweep is empty across 145 files, and the controls suite is 32 of 32, the new
+control proving the guard fails when the clause is removed.
