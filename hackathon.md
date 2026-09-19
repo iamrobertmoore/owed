@@ -1175,7 +1175,8 @@ table is 336 rows weighing 4.79 MB, and 253 of those rows are embedding response
 because a `text-embedding-3-small` result is cached as its 1024 floats rendered as text. That is 4.67 MB of
 the 4.79. `spend` was a public reactive query doing `ctx.db.query("aiCache").collect()`, and `App.tsx`
 subscribes to it in the ledger, so every write to the log re-ran the query and every open session paid the
-whole table again. A few hundred re-runs is the 2.39 GB.
+whole table again. A few hundred re-runs is the 2.39 GB. The README described that footer as read out of
+the cache table rather than estimated, which is exactly what it was, and that is the sentence this changes.
 
 **The count now sits beside the rows it counts.** `spendTotals` is one row keyed on a scope string, and
 `aiCache.put` writes it in the same transaction as the insert. `put` is the only writer of the log, so there

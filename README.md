@@ -76,7 +76,7 @@ No OpenAI credits came with the event, so spend is real money and I treated it t
 - Every model call goes through one module and is cached by a content hash of its exact inputs. A repeated input costs nothing.
 - `gpt-4o-mini` and `text-embedding-3-small`, nothing larger.
 - No model call ever runs on a page load.
-- The ledger footer reports this deployment's distinct calls, tokens and dollar spend, read out of the cache table rather than estimated.
+- The ledger footer reports this deployment's distinct calls, tokens and dollar spend, from a running total kept beside the call log rather than estimated.
 
 <details>
 <summary><strong>The Convex surface</strong></summary>
