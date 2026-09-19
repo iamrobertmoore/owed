@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
-import { EMBEDDING_MODEL, usdFor } from "./pricing";
+import { SPEND_SCOPE, usdFor } from "./pricing";
 import type { Doc, Id } from "./_generated/dataModel";
 
 /**
@@ -416,8 +416,8 @@ export const dismiss = mutation({
 /**
  * What this deployment has spent on models, in dollars.
  *
- * Read straight off the cache log rather than estimated, and priced at the
- * rates in `pricing.ts`. A repeated input is served from cache and costs
+ * Read off the call log's own running total rather than estimated, and priced
+ * at the rates in `pricing.ts`. A repeated input is served from cache and costs
  * nothing, so this counts distinct work only.
  */
 export const spend = query({
@@ -425,19 +425,20 @@ export const spend = query({
   handler: async (ctx): Promise<SpendSummary | null> => {
     const userId = await getAuthUserId(ctx);
     if (userId === null) return null;
-    const rows = await ctx.db.query("aiCache").collect();
-    let inputTokens = 0;
-    let outputTokens = 0;
-    let embeddingTokens = 0;
-    for (const row of rows) {
-      if (row.model === EMBEDDING_MODEL) embeddingTokens += row.inputTokens;
-      else {
-        inputTokens += row.inputTokens;
-        outputTokens += row.outputTokens;
-      }
-    }
+    // One row, not the whole log. Reading the log to count it meant reading all
+    // 336 rows, 4.79 MB of cached text, on every re-run of this query, and the
+    // landing page subscribes to it, so every write to the log re-ran it and
+    // every visitor paid the 4.79 MB again. See `spendTotals` in `schema.ts`.
+    const totals = await ctx.db
+      .query("spendTotals")
+      .withIndex("by_scope", (q) => q.eq("scope", SPEND_SCOPE))
+      .unique();
+    const distinctCalls = totals?.distinctCalls ?? 0;
+    const inputTokens = totals?.inputTokens ?? 0;
+    const outputTokens = totals?.outputTokens ?? 0;
+    const embeddingTokens = totals?.embeddingTokens ?? 0;
     return {
-      distinctCalls: rows.length,
+      distinctCalls,
       inputTokens,
       outputTokens,
       embeddingTokens,

@@ -321,4 +321,29 @@ export default defineSchema({
     outputTokens: v.number(),
     createdAt: v.number(),
   }).index("by_key", ["key"]),
+
+  /**
+   * Running totals over `aiCache`, so that reporting the spend does not read it.
+   *
+   * One row, keyed on `scope`. It exists because `claims.spend` is a reactive
+   * query the landing page subscribes to, and it read the whole log on every
+   * re-run. Measured on the judged deployment, 19 September 2026: **336 rows
+   * weighing 4.79 MB**, of which 253 embedding rows are 4.67 MB, because an
+   * embedding is cached as its 1024 floats rendered as text at about 19 KB each.
+   * Every write to the log therefore re-ran the query and every visitor paid the
+   * 4.79 MB again, which on its own is enough to explain the deployment passing
+   * the free plan's 1 GB of database I/O. These totals make it a one-row read.
+   *
+   * They are written in the same transaction as the insert, in `aiCache.put`,
+   * which is the only writer of the log. A count maintained beside the rows it
+   * counts can drift, and this one cannot: there is no path that inserts a call
+   * without bumping it, so the two change together or not at all.
+   */
+  spendTotals: defineTable({
+    scope: v.string(),
+    distinctCalls: v.number(),
+    inputTokens: v.number(),
+    outputTokens: v.number(),
+    embeddingTokens: v.number(),
+  }).index("by_scope", ["scope"]),
 });

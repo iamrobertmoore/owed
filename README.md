@@ -83,7 +83,7 @@ No OpenAI credits came with the event, so spend is real money and I treated it t
 
 | Area | What is used |
 |---|---|
-| Schema | Nine tables, nineteen indexes and a vector index, with typed validators for the claim lifecycle and the reply classifications |
+| Schema | Ten tables, twenty indexes and a vector index, with typed validators for the claim lifecycle and the reply classifications |
 | Vector search | A 1024-dimension index over the provisions, filtered by counterparty, retrieved from an action |
 | Functions | Queries, mutations and actions, with internal functions for everything the UI must not reach |
 | HTTP | An HTTP action for the AgentMail webhook, mounted in `convex/http.ts` |
