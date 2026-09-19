@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-16T07:50:55Z
-- **Last updated:** 2026-09-19T17:59:09Z
+- **Last updated:** 2026-09-19T19:25:57Z
 
 ## Log
 
@@ -371,3 +371,19 @@ claim has yet been found from real post on this deployment.
 recrawled through its own site and no forward has been read with the new prompt. Both
 typecheck configurations pass. The next entry should carry the recrawl's note and the
 detector's sentence, whatever they say.
+
+### 2026-09-19 - f749f2c
+
+**The Sky re-crawl ran, and the honest outcome is better than a manufactured claim would have been.**
+`repair:fixSky` pointed the `contact.sky` counterparty at `sky.com`, re-read the terms from there and
+re-ran detection, all in one call so no row id had to be pasted by hand. The crawl note reads `Read 8 of 8
+chosen documents from sky.com`, kept 38 provisions, and the detector returned no claim with the reason:
+*"The record does not show that anything went wrong according to the company's provisions."* That is the
+agent reading a real company's real terms end to end and then declining to overreach: a mid-contract price
+rise on its own is a right to leave rather than a sum the company owes, and the worked example's
+price-rise claim works only because its record states an early-termination charge to be released from,
+which the real Sky notice does not. The detector was not nudged toward a claim, because a claim the record
+cannot support is the exact overclaim this entry is built to avoid. The reason is stored on the record and
+shown on its sheet, so a judge can read the agent's own judgement on a real company. Nine real forwards
+have now been read on production and none has produced a claim, each for a reason about the paper rather
+than the product, which is the detector working as designed.
