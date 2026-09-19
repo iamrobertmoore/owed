@@ -19,6 +19,23 @@
  *
  * Stripping to the registrable domain is the difference between reading a
  * company's published terms and reading nothing.
+ *
+ * **The reduction has a measured limit, found on 19 September 2026, and it is the
+ * case to know about before trusting it.** It only helps when the sending host is
+ * a *subdomain* of the company's site, so that dropping labels arrives at the
+ * site. Sky sends from `sky@email.contact.sky`, and `contact.sky` is a domain of
+ * its own rather than a subdomain of `sky.com`, so the reduction stops at
+ * `contact.sky` and never reaches the site that publishes Sky's terms. The crawl
+ * then reported `Looked at 26 URLs on contact.sky (sitemap 0, mapper 17), none
+ * looked like terms`, against a real broadband price-rise notice that states a
+ * problem on a contract with a term left to run. The record it should have found
+ * a claim in stayed a record.
+ *
+ * No amount of label stripping fixes this one, because the company's own site is
+ * not a parent of the host it sent from. A fix has to ask for the company's site
+ * in its own right rather than reduce the sender's host, and until it does, a
+ * `skipped` crawl on a two-label host is a reason to look at the site by hand
+ * rather than a reason to believe the company publishes no terms.
  */
 
 /**
