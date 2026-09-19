@@ -33,13 +33,13 @@ Open the live URL and the ledger is already there. A cold visitor is signed in a
 | [The silence that escalated](https://fantastic-hamster-482.convex.site#claim=demo-silent) | No reply inside the window the company itself publishes. The sweep moves the claim up a rung and drafts a different letter. Silence is not agreement, and the ledger says so. |
 | [The letter waiting on you](https://fantastic-hamster-482.convex.site#claim=demo-gate) | A drafted letter that cites clause 11.3 and answers the clause 11.4 exclusion before they raise it. Nothing leaves the outbox until you press send, and on the example pressing it writes to the timeline that nothing was transmitted rather than emailing anyone. |
 
-### The two that were real
+### The nine that were real
 
-The four cases above are reconstructed, and the page says so everywhere they appear. Two emails were not.
+The four cases above are reconstructed, and the page says so everywhere they appear. Nine emails were not.
 
-I forwarded two real emails to my own agent address: an order confirmation from a bike shop, and a refund notification from a booking platform. It kept the first as a record, with the price, the reference and the counterparty. It read the second and turned it down in a sentence, because the refund had already been paid and there was nothing left to hold anyone to.
+I forwarded nine real emails to my own agent address, among them an order confirmation from a bike shop, a refund notification from a booking platform, a missed-delivery notice, two cancellation requests, and price-rise notices from Spotify, Ring and Sky. It read all nine. Six produced a record or a refusal and no claim, each with a reason in the agent's own words, because the paper stated no failure that the company's own terms commit it to remedy. That is the detector working. The three price rises are the shape a claim is built from, and none has become one. At first the terms search never reached the companies at all: it read the host each mail was sent from rather than the company's site. Spotify and Ring are fixed, their terms are read from `spotify.com` and `ring.com`, and there is still no claim, correctly, because a rolling monthly subscription has no exit charge to be released from. Sky writes from `contact.sky` and publishes on `sky.com`, which no reduction of the sending host reaches, so the reader now asks for the company's own site in its own right. **No claim has yet been found from real post on this deployment**, and the video says so rather than implying otherwise.
 
-Both decisions are on my own ledger, in the agent's own words, and **you cannot see that ledger.** That is not a gap, it is the rule the product runs on: every read re-checks the account that owns the row, so a visitor sees their own ledger and nobody else's, and a judge who signs in gets their own copy of the four cases above.
+Every decision is on my own ledger, in the agent's own words, and **you cannot see that ledger.** That is not a gap, it is the rule the product runs on: every read re-checks the account that owns the row, so a visitor sees their own ledger and nobody else's, and a judge who signs in gets their own copy of the four cases above.
 
 ## £71.2 billion is not recovered
 
@@ -139,6 +139,6 @@ npm run deploy
 
 The worked example is reconstructed content, not a live mailbox. It is seeded into a guest's ledger on arrival, and a real account can load it on request from the empty state. It is labelled in the UI, and its counterparties are fictional businesses on `.example` domains, which RFC 2606 reserves so that they can never resolve. It loads only onto an empty ledger, so it can never sit beside a claim the owner did not create, and the totals block says when the figures above it cover it. No mail was sent to create it and no model was called: it exists so a judge can see the product work without forwarding an email and waiting. Pressing send on the example advances the claim and writes to its timeline that nothing was transmitted. Publishing a claim asserting that a real named business stonewalled me would be a false statement about a real company, and a product whose argument is that nothing gets overclaimed cannot open by overclaiming.
 
-Real claims would run on real forwarded mail with the personal details removed; production has detected none yet, and the two emails on the ledgers above are the only real paper in the product. The survey figures are the UK government's own and are cited above. The banner and the diagram are hand-authored SVG in `docs/`.
+Real claims would run on real forwarded mail with the personal details removed; production has detected none yet, and the nine emails described above are the only real paper in the product. The survey figures are the UK government's own and are cited above. The banner and the diagram are hand-authored SVG in `docs/`.
 
 Built by [Robert Moore](https://github.com/iamrobertmoore). **MIT**. See [LICENSE](LICENSE).

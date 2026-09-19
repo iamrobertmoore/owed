@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-16T07:50:55Z
-- **Last updated:** 2026-09-19T10:34:26Z
+- **Last updated:** 2026-09-19T16:51:09Z
 
 ## Log
 
@@ -1267,3 +1267,30 @@ the proof that the inbound loop runs on real mail, and names the miss out loud r
 The claim that appears at the approval gate is the worked example's, every row of it carries a chip, and the
 narration names the example at the point it switches. **The honest position is that production has never
 detected a claim from real post**, and this entry says that rather than implying otherwise.
+
+### 2026-09-19 - fab47cb
+
+**The Sky miss is the third shape of one defect, and the reduction was never going to reach it, so the
+reader is asked instead.** The ingest prompt already returns the sender's domain; it now also returns
+`siteDomain`, the company's own website when the model can name it with confidence, and says null rather
+than guessing. The value is reduced and checked in code before it is trusted, written only when it differs
+from the sender's domain, and tried first by the crawl, with the reduced sending host kept as the second
+attempt in case the reader named a site that does not resolve. A counterparty written before the reader
+could name a site gets one by hand through `repair.setSiteDomain`, after which the existing `recrawl` and
+`redetect` do the rest (`convex/records.ts`, `convex/domains.ts`, `convex/policies.ts`, `convex/repair.ts`).
+
+**The detector's verdict was being thrown away, which is the arrivals defect one table over.** `detect`
+computed a reason on every exit and returned it to a scheduler that discarded it, so a record with no claim
+could say only whether the terms had been read, never what the detector made of them. "It read their terms
+and nothing commits them here" and "it never got to look" are different facts. The verdict is stored on the
+record now, on all four exits, and the record sheet prints it above the crawl status rather than letting the
+status stand in for it (`convex/schema.ts`, `src/RecordSheet.tsx`).
+
+**The README said two real emails where there are nine.** Its section on the real paper was written when
+two had arrived and never moved, while the log and the script had moved to nine. It now describes the nine,
+which six were refused or kept without a claim and why, what happened to the three price rises, and states
+that no claim has yet been found from real post on this deployment.
+
+**Not measured.** The deployment was not redeployed from this tree, so the Sky row has not been recrawled
+through its own site and no forward has been read with the new prompt. Both typecheck configurations pass.
+The next entry should carry the recrawl's note and the detector's sentence, whatever they say.
