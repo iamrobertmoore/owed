@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-16T07:50:55Z
-- **Last updated:** 2026-09-18T22:55:00Z
+- **Last updated:** 2026-09-19T06:41:00Z
 
 ## Log
 
@@ -1160,3 +1160,58 @@ cannot return to the source unremarked.
 
 **What is not measured.** The production message round trip is still outstanding, so there is no value for
 the field to hold and its future is undecided. This change moves no claim and no figure the ledger reports.
+
+### 2026-09-19 - 863629d
+
+**The deployment passed the free plan's database I/O, and one query reading the whole log was the cause.**
+Convex emailed to say the team had exceeded its monthly free plan limits. The dashboard puts Database I/O at
+2.41 GB against an included 1 GB, and 2.39 GB of that is reads rather than writes. The whole of the overage
+landed on 18 September, and 19 September was near zero. Every other resource on the plan is well inside its
+limit: function calls 13K of 1M, action compute 0.092 of 20 GB-hours, database storage 29.55 MB of 512 MB,
+data egress 19.29 MB of 1 GB.
+
+**`claims.spend` counted the model log by reading all of it, and the landing page subscribes to it.** The
+table is 336 rows weighing 4.79 MB, and 253 of those rows are embedding responses of about 19 KB each,
+because a `text-embedding-3-small` result is cached as its 1024 floats rendered as text. That is 4.67 MB of
+the 4.79. `spend` was a public reactive query doing `ctx.db.query("aiCache").collect()`, and `App.tsx`
+subscribes to it in the ledger, so every write to the log re-ran the query and every open session paid the
+whole table again. A few hundred re-runs is the 2.39 GB.
+
+**The count now sits beside the rows it counts.** `spendTotals` is one row keyed on a scope string, and
+`aiCache.put` writes it in the same transaction as the insert. `put` is the only writer of the log, so there
+is no path that adds a call without moving the total, which is what makes an exactly maintained aggregate
+safe here rather than a cache that can drift. `claims.spend` reads that one row.
+
+**The classification moved so it cannot be written twice.** The bucket rule, which sends an embedding's
+input tokens to `embeddingTokens` and everything else to `inputTokens` and `outputTokens`, is now
+`summarise` in `pricing.ts`. The incremental bump asks it about one call and the batch recount asks it about
+every row, so the running total and the recount agree by construction. `pricing.ts` carries no Convex import,
+so the check imports the shipped function rather than restating it, which is the defect this project has been
+caught by before.
+
+**Proven on the deployment, on the path that actually runs.** `rebuildTotals` backfilled the row and
+returned exactly what the old query returned: 336 calls, 231460 input tokens, 19162 output tokens, 8909
+embedding tokens, which prices to $0.046394. `verifyTotals` recounts the log independently and returns
+`match: true`. Then `aiCache:selfTest` calls the real `put` with a reserved key and zero tokens, confirms the
+totals moved by exactly one call, deletes the row and restores the totals, all in one transaction, and
+returns `bumped: true, clean: true, ok: true` with the deployment left holding 336 calls on the same totals
+row. The backfill proved the batch path and production uses the incremental one, so exercising only the
+backfill would have proved the wrong thing.
+
+**The self-test failed first, and the bug was in the test.** Its first run reported `clean: false` on a run
+that had cleaned up perfectly, because it asserted on the row value it read before deleting that row rather
+than reading the key again afterwards. It now re-reads the key into a separate value and asserts that is
+absent, and asserts the insert happened at all, so the check cannot pass by never having fired.
+
+**The schema moved, and every surface that counted it moved with it.** The deployment now holds ten tables
+and twenty indexes rather than nine and nineteen. The README's schema row, the architecture footer and the
+submission documents all say so. The claim sweep's own guard held the retired wording on its allowed list
+and the current wording nowhere, so adding the table flipped a guard that would otherwise have defended the
+old count. That is corrected in the same pass, and the opening entry of this log keeps its nine, because
+that is what the schema held at the commit it describes.
+
+**What the fix costs, stated rather than hidden.** A single totals row is a serialisation point, because
+every `put` writes the same document. `convex insights` reports one OCC conflict on `aiCache.put` in the
+last 72 hours, which is nothing at this scale, and a sharded counter is the answer if it stops being nothing.
+What is not measured here is the dashboard's read volume after the change. The fix removes the read, and
+whether the month's figure clears is the dashboard's to show rather than mine to assert.
