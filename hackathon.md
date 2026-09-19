@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-16T07:50:55Z
-- **Last updated:** 2026-09-19T07:10:00Z
+- **Last updated:** 2026-09-19T08:20:00Z
 
 ## Log
 
@@ -1219,3 +1219,20 @@ every `put` writes the same document. `convex insights` reports one OCC conflict
 last 72 hours, which is nothing at this scale, and a sharded counter is the answer if it stops being nothing.
 What is not measured here is the dashboard's read volume after the change. The fix removes the read, and
 whether the month's figure clears is the dashboard's to show rather than mine to assert.
+
+**The class, checked rather than assumed.** Fixing one query invites the question of whether another one is
+doing the same thing, so I read every `.collect()` in `convex/`. Every one on a request path reads through an
+index scoped to a person or a company (`by_user`, `by_claim`, `by_counterparty`), and the rest are internal
+repair tooling that nothing subscribes to. There are twenty, which is what
+`grep -o '\.collect()' convex/*.ts | wc -l` prints and not a number I carried in my head; the first version
+of this sentence said twenty-one. The comparison that decides it is scope rather than table size: the read
+this entry is about was 4.79 MB, unscoped, on every re-run of a query the ledger subscribes to, while the
+heaviest single user's own rows weigh 40,136 bytes, so the worst scoped read is 125 times smaller.
+**`aiCache` was the only table read without a scope and the only one holding 19 KB rows.** The row counts
+behind that comparison follow the traffic, so they are a snapshot and not a figure to keep: 547 message rows
+across 42 users at the time of writing.
+
+**And the row growth that auto-guest costs, measured rather than hoped.** Those 42 users are what the visits
+so far have left behind, because a cold visitor is signed in as a guest on load and the worked example is
+seeded per person. The whole `messages` table is 0.46 MB. That is nothing at this size, and it is the number
+to re-measure if the site ever gets traffic rather than a judge's visit.
