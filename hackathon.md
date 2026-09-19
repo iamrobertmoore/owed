@@ -12,9 +12,40 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-16T07:50:55Z
-- **Last updated:** 2026-09-19T08:20:00Z
+- **Last updated:** 2026-09-19T10:34:26Z
 
 ## Log
+
+### 2026-09-19 - 7777995
+
+**The ninth real forward arrived, states a problem, and produced no claim, and the cause is a defect rather
+than the paper.** A Sky notice dated 17 March 2026 announces a broadband price change of £3 a month on Sky
+Full Fibre 500 from 1 April 2026, account 622130883672. That is a price rise on a contract with a term left
+to run, which is the shape the detector is built to find, and it is the best paper any forward has carried.
+It became a record and no claim followed.
+
+**The cause is the third shape of one defect, and the fix already in the tree does not reach it.** The mail
+is sent from `sky@email.contact.sky`, and `registrableDomain` reduces that to `contact.sky`, which is where
+the crawl went: `Looked at 26 URLs on contact.sky (sitemap 0, mapper 17), none looked like terms`, status
+`skipped`. Sky's own terms are on `sky.com`. The reduction added for Spotify and Ring works because
+`legal.spotify.com` and `mail.ring.com` are subdomains of the companies' own sites, so dropping labels
+arrives at the site. `contact.sky` is a domain of its own rather than a subdomain of `sky.com`, so no amount
+of label stripping reaches it. **The reduction fixes a sending subdomain and cannot fix a sending domain**,
+and that limit is now recorded in `convex/domains.ts` beside the reduction, because the next person to trust
+it needs to know where it stops.
+
+**What this changes about the entry's own claims.** Nine real forwards have now arrived and none has produced
+a claim. Six of them state no problem and were refused correctly, which is the detector working. Three were
+refused by a defect in the terms search rather than by their paper: the Spotify and Ring price rises, whose
+sending hosts were read instead of the companies' sites, and now the Sky price rise, whose sending host is
+not a subdomain of the company's site at all. The first two are fixed and measured. The third is measured
+and not fixed.
+
+**The video is recorded on the worked example, and the narration says so.** Beat 5 opens on the Sky row as
+the proof that the inbound loop runs on real mail, and names the miss out loud rather than sliding past it.
+The claim that appears at the approval gate is the worked example's, every row of it carries a chip, and the
+narration names the example at the point it switches. **The honest position is that production has never
+detected a claim from real post**, and this entry says that rather than implying otherwise.
 
 ### 2026-09-16 - 07823cd
 Started the project and wrote the domain model. Nine tables: an inbox per
