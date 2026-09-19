@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-16T07:50:55Z
-- **Last updated:** 2026-09-19T06:41:00Z
+- **Last updated:** 2026-09-19T07:10:00Z
 
 ## Log
 
@@ -1197,7 +1197,10 @@ embedding tokens, which prices to $0.046394. `verifyTotals` recounts the log ind
 totals moved by exactly one call, deletes the row and restores the totals, all in one transaction, and
 returns `bumped: true, clean: true, ok: true` with the deployment left holding 336 calls on the same totals
 row. The backfill proved the batch path and production uses the incremental one, so exercising only the
-backfill would have proved the wrong thing.
+backfill would have proved the wrong thing. **The judged URL then renders the figure from that row**: the
+landing page's footer reads `336 distinct model calls, 259,531 tokens, $0.0464 of OpenAI spend on this
+deployment`, read off the live site as a guest after the deploy, which is the totals row and not a count of
+the log.
 
 **The self-test failed first, and the bug was in the test.** Its first run reported `clean: false` on a run
 that had cleaned up perfectly, because it asserted on the row value it read before deleting that row rather
