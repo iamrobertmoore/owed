@@ -161,3 +161,31 @@ export const redetect = internalAction({
     return results;
   },
 });
+
+/**
+ * Name a counterparty's own site by hand, for the rows the reader wrote before
+ * it could name one.
+ *
+ * The case this exists for is measured: Sky writes from `contact.sky` and
+ * publishes on `sky.com`, so the reduction in `domains.ts` cannot reach the
+ * terms and the crawl reported, correctly and uselessly, that `contact.sky`
+ * has none. New forwards get the site from the reader. A row that predates
+ * that gets it here, and then `recrawl` and `redetect` do the rest. The value
+ * is reduced and checked the same way `upsertCounterparty` checks the reader's,
+ * and a site already on the row is left alone: this is a repair for an empty
+ * field, not a way to overwrite one.
+ */
+export const setSiteDomain = internalMutation({
+  args: { counterpartyId: v.id("counterparties"), siteDomain: v.string() },
+  handler: async (ctx, args) => {
+    const row = await ctx.db.get(args.counterpartyId);
+    if (!row) return { set: false, reason: "No such counterparty" };
+    if (row.siteDomain) return { set: false, reason: `Already ${row.siteDomain}` };
+    const site = registrableDomain(args.siteDomain);
+    if (!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(site)) {
+      return { set: false, reason: `Not a domain: ${args.siteDomain}` };
+    }
+    await ctx.db.patch(args.counterpartyId, { siteDomain: site });
+    return { set: true, siteDomain: site };
+  },
+});

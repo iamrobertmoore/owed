@@ -106,6 +106,17 @@ export default defineSchema({
     domain: v.string(),
     /** Where the terms live. Read by Firecrawl, not guessed. */
     policyUrls: v.array(v.string()),
+    /**
+     * The company's own website, when the reader can name it. `domain` is the
+     * registrable form of the host the mail came from, and that is only the
+     * company's site when the sender is a subdomain of it. Sky writes from
+     * `contact.sky` and publishes its terms on `sky.com`, and no reduction of
+     * the first arrives at the second, so the crawl went to a host with no
+     * terms on it and a real price-rise notice stayed a record. This is the
+     * site asked for in its own right, and it is the first host the crawl
+     * tries when it is set.
+     */
+    siteDomain: v.optional(v.string()),
     crawlStatus: v.union(
       v.literal("pending"),
       v.literal("crawled"),
@@ -169,6 +180,19 @@ export default defineSchema({
     occurredAt: v.number(),
     /** Where the record came from, so a judge can see it is not invented. */
     sourceMessageId: v.optional(v.id("messages")),
+    /**
+     * What the detector decided about this record, and why, in its own words.
+     *
+     * Stored rather than returned, for the reason the arrivals list stores the
+     * reader's verdict: a record with no claim used to be able to say only
+     * whether the terms had been read, not what the detector made of them. "It
+     * read their terms and found nothing that commits them here" and "it never
+     * got to look" are different facts, and the record sheet has to be able to
+     * tell them apart.
+     */
+    detectOutcome: v.optional(v.union(v.literal("claim"), v.literal("none"))),
+    detectReason: v.optional(v.string()),
+    detectedAt: v.optional(v.number()),
     /**
      * Set on the worked example's rows only, the same way `claims` and
      * `messages` mark theirs.

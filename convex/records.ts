@@ -49,8 +49,19 @@ export const upsertCounterparty = internalMutation({
     userId: v.id("users"),
     name: v.string(),
     domain: v.string(),
+    /** The company's own site, when the reader named one. See `schema.ts`. */
+    siteDomain: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<Id<"counterparties">> => {
+    // The reader's answer is a model's answer, so it is reduced and checked
+    // before it is trusted: a bare registrable host, or nothing. It is only
+    // written when it differs from the sender's domain, because when the two
+    // agree it adds nothing and the crawl already goes there.
+    const site = args.siteDomain ? registrableDomain(args.siteDomain) : "";
+    const siteDomain =
+      site && /^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(site) && site !== registrableDomain(args.domain)
+        ? site
+        : undefined;
     // The row is keyed on the company's own site, not the host its mail came
     // from. Keying on the sender's host gave one company one row per subdomain
     // it happens to send from, each with its own crawl, and the crawl was then
@@ -64,13 +75,44 @@ export const upsertCounterparty = internalMutation({
         q.eq("userId", args.userId).eq("domain", domain),
       )
       .unique();
-    if (existing) return existing._id;
+    if (existing) {
+      // A row that was made before the reader could name the site is given it
+      // now, once, so the next crawl reaches the company rather than the host
+      // it writes from. A site already on the row is never overwritten.
+      if (siteDomain && !existing.siteDomain) {
+        await ctx.db.patch(existing._id, { siteDomain });
+      }
+      return existing._id;
+    }
     return await ctx.db.insert("counterparties", {
       userId: args.userId,
       name: args.name,
       domain,
       policyUrls: [`https://${domain}`],
       crawlStatus: "pending",
+      ...(siteDomain ? { siteDomain } : {}),
+    });
+  },
+});
+
+/**
+ * Write the detector's decision onto the record it was made about.
+ *
+ * The reason used to be returned to a scheduler that discarded it, so a record
+ * with no claim could say only whether the terms had been read, never what the
+ * detector made of them. That is the arrivals defect again, one table over.
+ */
+export const markDetect = internalMutation({
+  args: {
+    recordId: v.id("records"),
+    outcome: v.union(v.literal("claim"), v.literal("none")),
+    reason: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.recordId, {
+      detectOutcome: args.outcome,
+      detectReason: args.reason.slice(0, 300),
+      detectedAt: Date.now(),
     });
   },
 });
@@ -202,11 +244,16 @@ export const INGEST_SYSTEM = [
   "",
   "Return JSON:",
   "{\"keep\": boolean, \"reason\": string, \"kind\": \"order\"|\"booking\"|\"subscription\"|\"service\"|\"other\",",
-  " \"counterpartyName\": string, \"counterpartyDomain\": string, \"reference\": string,",
-  " \"description\": string, \"amount\": number|null, \"currency\": string|null, \"dueAt\": string|null}",
+  " \"counterpartyName\": string, \"counterpartyDomain\": string, \"siteDomain\": string|null,",
+  " \"reference\": string, \"description\": string, \"amount\": number|null,",
+  " \"currency\": string|null, \"dueAt\": string|null}",
   "",
   "Rules:",
   "- `counterpartyDomain` must be the sender's domain, without a scheme.",
+  "- `siteDomain` is the company's own website, where it publishes its terms,",
+  "  when the message names it or you know it with confidence: mail from",
+  "  contact.sky is from Sky, whose site is sky.com. If you are not sure, null.",
+  "  Never guess a domain.",
   "- `dueAt` must be an ISO 8601 date if the message states one, else null. Do",
   "  not infer a date that is not written down.",
   "- `amount` must be a number if the message states one, else null. Never guess.",
@@ -244,6 +291,7 @@ export const ingestFromMessage = internalAction({
       kind?: string;
       counterpartyName?: string;
       counterpartyDomain?: string;
+      siteDomain?: string | null;
       reference?: string;
       description?: string;
       amount?: number | null;
@@ -279,6 +327,7 @@ export const ingestFromMessage = internalAction({
       userId: args.userId,
       name: parsed.counterpartyName || parsed.counterpartyDomain,
       domain: parsed.counterpartyDomain,
+      siteDomain: typeof parsed.siteDomain === "string" ? parsed.siteDomain : undefined,
     });
 
     const dueAt = parsed.dueAt ? Date.parse(parsed.dueAt) : undefined;
@@ -329,10 +378,17 @@ export const detect = internalAction({
     if (!counterparty) return { found: false, reason: "No counterparty" };
 
     // The terms have to be read before a claim can be argued from them.
-    if (counterparty.crawlStatus !== "crawled") {
+    let crawlStatus = counterparty.crawlStatus;
+    if (crawlStatus !== "crawled") {
       await ctx.runAction(internal.policies.readCounterparty, {
         counterpartyId: record.counterpartyId,
       });
+      // Re-read, because the reason written below has to describe the crawl
+      // that just ran and not the row as it stood before it.
+      const after = await ctx.runQuery(internal.policies.getCounterparty, {
+        counterpartyId: record.counterpartyId,
+      });
+      crawlStatus = after?.crawlStatus ?? crawlStatus;
     }
 
     const found = await ctx.runAction(internal.policies.relevant, {
@@ -340,7 +396,16 @@ export const detect = internalAction({
       issue: record.description,
     });
     if (found.supporting.length === 0) {
-      return { found: false, reason: "Their published terms commit them to nothing here." };
+      const reason =
+        crawlStatus === "crawled"
+          ? "Nothing in the pages read from their site commits them to a remedy for this transaction."
+          : "Their terms could not be read, so nothing could be argued from them.";
+      await ctx.runMutation(internal.records.markDetect, {
+        recordId: args.recordId,
+        outcome: "none",
+        reason,
+      });
+      return { found: false, reason };
     }
 
     const provisions = found.supporting
@@ -401,11 +466,22 @@ export const detect = internalAction({
     try {
       parsed = JSON.parse(raw);
     } catch {
+      await ctx.runMutation(internal.records.markDetect, {
+        recordId: args.recordId,
+        outcome: "none",
+        reason: "The detector's reply was not JSON, so no decision could be read from it.",
+      });
       return { found: false, reason: "Model reply was not JSON" };
     }
 
     if (!parsed.claim || !parsed.basis) {
-      return { found: false, reason: parsed.reason ?? "Nothing owed on their own terms." };
+      const reason = parsed.reason ?? "Nothing owed on their own terms.";
+      await ctx.runMutation(internal.records.markDetect, {
+        recordId: args.recordId,
+        outcome: "none",
+        reason,
+      });
+      return { found: false, reason };
     }
 
     // Bind the claim back to the provision it is argued from, so the letter can
@@ -433,6 +509,11 @@ export const detect = internalAction({
     // is the letter, approve it" completes in seconds. Drafting is internal and
     // reversible; the send still waits for the owner.
     await ctx.scheduler.runAfter(0, internal.sweep.runOne, { claimId });
+    await ctx.runMutation(internal.records.markDetect, {
+      recordId: args.recordId,
+      outcome: "claim",
+      reason: parsed.basis,
+    });
 
     return { found: true, claimId, reason: parsed.basis };
   },

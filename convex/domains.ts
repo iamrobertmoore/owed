@@ -86,10 +86,22 @@ export function registrableDomain(host: string): string {
   return lastTwo;
 }
 
-/** The hosts to try, best first: the company's own site, then the sender's. */
-export function originsFor(domain: string): string[] {
+/**
+ * The hosts to try, best first: the company's own site when the reader named
+ * it, then the registrable form of the sending host, then the sending host as
+ * it was.
+ *
+ * `siteDomain` exists for the case the reduction cannot reach. `contact.sky`
+ * reduces to `contact.sky`, and Sky's terms are on `sky.com`; the only way to
+ * get there is to ask for the company's site in its own right, which the
+ * reader now does. It is tried first because when it is present it is the
+ * answer, and the reduced sending host is kept as the second attempt in case
+ * the reader named a site that does not resolve.
+ */
+export function originsFor(domain: string, siteDomain?: string | null): string[] {
+  const site = siteDomain ? registrableDomain(siteDomain) : "";
   const registrable = registrableDomain(domain);
   const raw = String(domain ?? "").trim().toLowerCase().replace(/^https?:\/\//, "").split("/")[0];
-  const hosts = [registrable, raw].filter(Boolean);
+  const hosts = [site, registrable, raw].filter(Boolean);
   return [...new Set(hosts)].map((h) => `https://${h}`);
 }

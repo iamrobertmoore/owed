@@ -318,7 +318,8 @@ body::before {
   "READER" and the paragraph loses its left edge, which reads as a mistake.
   A grid column holds the indent whatever the label says.
 */
-.row .reason {
+.row .reason,
+.sheet .reason {
   display: grid;
   grid-template-columns: 58px 1fr;
   column-gap: 8px;
@@ -330,7 +331,14 @@ body::before {
   color: var(--ink-soft);
 }
 
-.row .reason .who {
+.sheet .reason {
+  grid-template-columns: 74px 1fr;
+  font-size: 14px;
+  margin-top: 0;
+}
+
+.row .reason .who,
+.sheet .reason .who {
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 1.1px;

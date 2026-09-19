@@ -70,7 +70,9 @@ export const readCounterparty = internalAction({
     //    The registrable domain is tried first and the sending host second, so
     //    the extra map call is only ever spent on an address that today returns
     //    nothing at all.
-    const origins = [...new Set([...originsFor(cp.domain), ...(cp.policyUrls ?? [])])];
+    const origins = [
+      ...new Set([...originsFor(cp.domain, cp.siteDomain), ...(cp.policyUrls ?? [])]),
+    ];
     if (origins.length === 0) origins.push(`https://${cp.domain}`);
 
     // 2. Find the candidate documents. Two independent sources, because either

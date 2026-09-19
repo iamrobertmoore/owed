@@ -174,6 +174,20 @@ export function RecordSheet({
             ) : (
               <div className="block">
                 <div className="label">What it led to</div>
+                {/*
+                  The detector's own verdict, when it has one, in its own words.
+                  This is the sentence the sheet could not say before: the
+                  status lines below describe whether the terms were read, and
+                  only the detector can say what it made of them. It is printed
+                  first because it is the answer; the crawl status is the
+                  context for it.
+                */}
+                {record.detectReason ? (
+                  <div className="reason" style={{ marginBottom: 12 }}>
+                    <span className="who">Detector</span>
+                    <span className="said">{record.detectReason}</span>
+                  </div>
+                ) : null}
                 <div style={{ fontSize: 14.5, color: "var(--ink-soft)" }}>
                   {/*
                     Four outcomes, and they are four different facts, so none of
