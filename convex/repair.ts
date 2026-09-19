@@ -189,3 +189,118 @@ export const setSiteDomain = internalMutation({
     return { set: true, siteDomain: site };
   },
 });
+
+/**
+ * Find the counterparties a domain belongs to, across every user.
+ *
+ * Used by `fixSky` so the repair can be run with no argument: the operator
+ * should not have to open the dashboard, find a row id and paste it, because a
+ * pasted-in id is one more thing to get wrong under deadline.
+ */
+export const counterpartiesByDomain = internalQuery({
+  args: { domain: v.string() },
+  handler: async (ctx, args): Promise<Array<{ _id: Id<"counterparties">; userId: Id<"users"> }>> => {
+    const want = registrableDomain(args.domain);
+    const rows = await ctx.db.query("counterparties").collect();
+    return rows
+      .filter((r) => registrableDomain(r.domain) === want)
+      .map((r) => ({ _id: r._id, userId: r.userId }));
+  },
+});
+
+/** Set a site domain unconditionally. `fixSky` needs this to be idempotent. */
+export const forceSiteDomain = internalMutation({
+  args: { counterpartyId: v.id("counterparties"), siteDomain: v.string() },
+  handler: async (ctx, args) => {
+    const site = registrableDomain(args.siteDomain);
+    if (!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(site)) {
+      return { set: false, reason: `Not a domain: ${args.siteDomain}` };
+    }
+    await ctx.db.patch(args.counterpartyId, { siteDomain: site });
+    return { set: true, siteDomain: site };
+  },
+});
+
+/** Unclaimed records belonging to one counterparty. */
+export const unclaimedRecordsForCounterparty = internalQuery({
+  args: { counterpartyId: v.id("counterparties") },
+  handler: async (ctx, args): Promise<Id<"records">[]> => {
+    const records = await ctx.db
+      .query("records")
+      .withIndex("by_counterparty", (q) => q.eq("counterpartyId", args.counterpartyId))
+      .collect();
+    const claims = await ctx.db.query("claims").collect();
+    const claimed = new Set(claims.map((c) => c.recordId).filter(Boolean));
+    return records.filter((r) => !r.demoKey && !claimed.has(r._id)).map((r) => r._id);
+  },
+});
+
+/**
+ * The whole Sky repair, in one call with no arguments.
+ *
+ * Sky writes from `contact.sky` and publishes its terms on `sky.com`, which no
+ * reduction of the sending host reaches, so the crawl found nothing and the
+ * record produced no claim. This points every `contact.sky` counterparty at
+ * `sky.com`, re-reads the terms from there, and re-runs detection over that
+ * counterparty's records that have no claim yet. Safe to run twice: the site is
+ * set unconditionally, and detection is restricted to unclaimed records.
+ *
+ * Returns a per-counterparty report — the crawl note, the provisions kept, and
+ * whether a claim was found — which is exactly the evidence the next log entry
+ * needs, so read it and keep it.
+ */
+type SkyReport = {
+  counterparties: number;
+  report: Array<{
+    counterpartyId: string;
+    userId: string;
+    crawlNote: string;
+    provisions: number;
+    documents: number;
+    detected: Array<{ recordId: string; found: boolean; reason: string }>;
+  }>;
+};
+
+export const fixSky = internalAction({
+  args: {},
+  handler: async (ctx): Promise<SkyReport> => {
+    const cps = await ctx.runQuery(internal.repair.counterpartiesByDomain, {
+      domain: "contact.sky",
+    });
+    const report: Array<{
+      counterpartyId: string;
+      userId: string;
+      crawlNote: string;
+      provisions: number;
+      documents: number;
+      detected: Array<{ recordId: string; found: boolean; reason: string }>;
+    }> = [];
+    for (const cp of cps) {
+      await ctx.runMutation(internal.repair.forceSiteDomain, {
+        counterpartyId: cp._id,
+        siteDomain: "sky.com",
+      });
+      const read = await ctx.runAction(internal.policies.readCounterparty, {
+        counterpartyId: cp._id,
+      });
+      const recordIds = await ctx.runQuery(
+        internal.repair.unclaimedRecordsForCounterparty,
+        { counterpartyId: cp._id },
+      );
+      const detected: Array<{ recordId: string; found: boolean; reason: string }> = [];
+      for (const recordId of recordIds) {
+        const d = await ctx.runAction(internal.records.detect, { recordId });
+        detected.push({ recordId, found: d.found, reason: d.reason });
+      }
+      report.push({
+        counterpartyId: cp._id,
+        userId: cp.userId,
+        crawlNote: read.note,
+        provisions: read.provisions,
+        documents: read.documents,
+        detected,
+      });
+    }
+    return { counterparties: cps.length, report };
+  },
+});
