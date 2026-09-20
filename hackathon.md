@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-16T07:50:55Z
-- **Last updated:** 2026-09-19T19:25:57Z
+- **Last updated:** 2026-09-20T06:04:21Z
 
 ## Log
 
@@ -387,3 +387,21 @@ cannot support is the exact overclaim this entry is built to avoid. The reason i
 shown on its sheet, so a judge can read the agent's own judgement on a real company. Nine real forwards
 have now been read on production and none has produced a claim, each for a reason about the paper rather
 than the product, which is the detector working as designed.
+
+### 2026-09-20 - 8c37364
+
+**A depth pass over the interface, and the sentence that was hiding behind a button.**
+Opened cold against the rest of the field, the ledger read flat: `--paper` was `#faf8f5` against
+`--card` at `#ffffff`, so the cards had nothing to sit on and the shadows had no work to do.
+Paper is now `#f2efe9` and the shadows are three layers rather than two, the wide one on a
+negative spread so it never shows as a band. The body carries two radial washes, green from the
+recovered colour top right and amber from the owed colour bottom left, plus one very slow drifting
+wash at 2.5% that reads as daylight rather than as motion. The masthead, totals, address panel and
+sections arrive on a 460ms stagger in the same language the rows already used. No layout, no copy
+and no colour meaning changed, and every animation added here is switched off under
+`prefers-reduced-motion`. The second change is a correction rather than decoration: auto-guest had
+moved the sign-in card behind a header button, and the card was the only surface carrying the line
+*"Your agent holds the paper trail, so the claim finds you."* A cold visitor therefore met three
+figures before anything on screen said what the figures were of. That line now sits under the
+wordmark, in the same words the document title uses, and hides below 620px where there is no room
+for it (`src/index.css`, `src/App.tsx`).
