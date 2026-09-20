@@ -10,16 +10,28 @@
   --ink-soft: #3a424c;
   --muted: #6a727c;
   --faint: #8a929c;
-  --paper: #faf8f5;
+  --paper: #f2efe9;
   --card: #ffffff;
-  --line: rgba(16, 20, 24, 0.1);
+  --line: rgba(16, 20, 24, 0.09);
   --line-strong: rgba(16, 20, 24, 0.18);
   --recovered: #0e7c5a;
   --recovered-wash: rgba(14, 124, 90, 0.08);
   --owed: #b5761f;
   --owed-wash: rgba(232, 163, 61, 0.12);
-  --shadow: 0 1px 2px rgba(16, 20, 24, 0.04), 0 8px 24px rgba(16, 20, 24, 0.06);
-  --shadow-lift: 0 2px 4px rgba(16, 20, 24, 0.05), 0 16px 40px rgba(16, 20, 24, 0.1);
+  /*
+    Three layers rather than two: a hairline that reads as the card's own edge,
+    a close shadow that seats it on the paper, and a wide, very soft one that
+    gives the page depth without a visible edge anywhere. The wide layer uses a
+    negative spread so it never shows as a band under the card.
+  */
+  --shadow:
+    0 0 0 1px rgba(16, 20, 24, 0.02),
+    0 1px 2px rgba(16, 20, 24, 0.05),
+    0 14px 30px -16px rgba(16, 20, 24, 0.2);
+  --shadow-lift:
+    0 0 0 1px rgba(16, 20, 24, 0.03),
+    0 2px 6px rgba(16, 20, 24, 0.06),
+    0 28px 56px -26px rgba(16, 20, 24, 0.3);
   --serif: Georgia, "Times New Roman", serif;
   --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   --mono: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
@@ -718,5 +730,220 @@ button.act.ghost {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* =============================================================== polish ==
+   A depth pass over the design above, added 20 September 2026. It changes no
+   layout, no copy and no colour meaning: the green still means money actually
+   recovered and the amber still means outstanding. What it adds is the thing
+   the page was missing against the field, which is depth. Three devices only,
+   so the page stays editorial rather than becoming a product landing page:
+
+   1. An ambient wash behind the paper, so the background is lit rather than
+      flat. Two radials, both under 5% alpha, drifting slowly enough that the
+      eye reads it as light rather than as motion.
+   2. Softer, layered shadows (the tokens above), so cards sit on the page
+      instead of being drawn on it.
+   3. A staggered arrival for the page's own furniture, matching the one the
+      rows already had, so the ledger assembles rather than appearing.
+
+   Everything here is disabled under prefers-reduced-motion at the bottom.
+   ======================================================================== */
+
+/*
+  The ambient wash. Painted on the body, behind `.shell` (z-index 1) and behind
+  the paper grain, so it lights the stock without touching a single component.
+  The green is the recovered colour at 10%, top right; the warm is the owed
+  colour at 7.5%, bottom left, and both fall to nothing well before the middle
+  of the page. Two corners, so the page has a direction of light rather than a
+  vignette.
+*/
+body {
+  background-color: var(--paper);
+  background-image:
+    radial-gradient(
+      1100px 700px at 86% -10%,
+      rgba(14, 124, 90, 0.1),
+      rgba(14, 124, 90, 0) 58%
+    ),
+    radial-gradient(
+      900px 620px at 4% 106%,
+      rgba(181, 118, 31, 0.075),
+      rgba(181, 118, 31, 0) 60%
+    );
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
+/*
+  A second, slower wash that actually moves. It is deliberately enormous and
+  almost invisible: 2.5% alpha over a 44 second cycle, travelling a few percent.
+  At that scale it does not read as an animation, it reads as daylight, which is
+  the point. It sits behind the grain so the two never interfere.
+*/
+body::after {
+  content: "";
+  position: fixed;
+  inset: -20%;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    rgba(14, 124, 90, 0.025),
+    rgba(14, 124, 90, 0) 70%
+  );
+  animation: ambient-drift 44s ease-in-out infinite alternate;
+}
+
+@keyframes ambient-drift {
+  from {
+    transform: translate3d(-4%, -2%, 0) scale(1);
+  }
+  to {
+    transform: translate3d(4%, 3%, 0) scale(1.08);
+  }
+}
+
+/*
+  The furniture arrives in the same language the rows already used, a short
+  rise with a soft curve, staggered so the eye travels down the page once
+  rather than having everything land at once. Short enough to be finished
+  before a viewer has read the first figure.
+*/
+.masthead,
+.totals,
+.example-note,
+.address,
+.shell > section {
+  animation: soft-arrival 460ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+.masthead { animation-delay: 0ms; }
+.totals { animation-delay: 60ms; }
+.example-note { animation-delay: 100ms; }
+.address { animation-delay: 140ms; }
+.shell > section:nth-of-type(1) { animation-delay: 180ms; }
+.shell > section:nth-of-type(2) { animation-delay: 220ms; }
+.shell > section:nth-of-type(3) { animation-delay: 260ms; }
+
+@keyframes soft-arrival {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/*
+  The totals block is the first thing read and the thing most likely to be
+  screenshotted, so it gets the one piece of real material treatment on the
+  page: a barely-there top light on each cell, as though the card catches the
+  ambient wash above it.
+*/
+.totals > div {
+  background-image: linear-gradient(180deg, #ffffff, #fcfbf9);
+  background-color: var(--card);
+}
+
+/* The recovered figure is the page's hero number. It gets depth, not glow. */
+.totals .value.recovered {
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+/*
+  Rows already lifted on hover. The lift is now seated on the new shadow scale
+  and picks up a trace of the recovered green in the border, so hovering reads
+  as the row becoming active rather than as a box growing a shadow.
+*/
+.row {
+  transition:
+    box-shadow 220ms cubic-bezier(0.2, 0.7, 0.3, 1),
+    transform 220ms cubic-bezier(0.2, 0.7, 0.3, 1),
+    border-color 220ms ease,
+    background-color 220ms ease;
+}
+
+.row:hover {
+  transform: translateY(-2px);
+  border-color: rgba(14, 124, 90, 0.22);
+}
+
+/* A row that opens nothing should not pretend it does. */
+div.row:hover {
+  transform: none;
+  border-color: var(--line);
+  box-shadow: var(--shadow);
+}
+
+/* Controls get the same seating, so a button feels pressable rather than flat. */
+button.act {
+  transition:
+    transform 160ms cubic-bezier(0.2, 0.7, 0.3, 1),
+    box-shadow 200ms ease,
+    filter 160ms ease;
+}
+
+button.act.primary {
+  box-shadow:
+    0 1px 2px rgba(16, 20, 24, 0.16),
+    0 8px 18px -10px rgba(16, 20, 24, 0.5);
+}
+
+button.act.primary:hover {
+  box-shadow:
+    0 2px 4px rgba(16, 20, 24, 0.18),
+    0 14px 26px -12px rgba(16, 20, 24, 0.55);
+  transform: translateY(-1px);
+}
+
+button.act.ghost:hover {
+  border-color: var(--line-strong);
+  background: rgba(16, 20, 24, 0.03);
+}
+
+/* The sheet is a modal surface, so it earns a deeper backdrop and a wider shadow. */
+.sheet-backdrop {
+  background: rgba(16, 20, 24, 0.36);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.sheet {
+  box-shadow:
+    -1px 0 0 rgba(16, 20, 24, 0.06),
+    -40px 0 90px -30px rgba(16, 20, 24, 0.34);
+}
+
+/* The address panel is the product's front door. Give it the ambient light too. */
+.address {
+  background-image: linear-gradient(180deg, #ffffff, #fcfbf9);
+  background-color: var(--card);
+}
+
+/*
+  Everything above is decoration, and decoration is the first thing that should
+  go when someone has asked their machine to stop moving things.
+*/
+@media (prefers-reduced-motion: reduce) {
+  body::after {
+    animation: none;
+  }
+
+  .masthead,
+  .totals,
+  .example-note,
+  .address,
+  .shell > section,
+  .row {
+    animation: none !important;
+  }
+
+  .row,
+  button.act {
+    transition: none;
   }
 }
