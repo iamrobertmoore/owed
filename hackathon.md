@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-16T07:50:55Z
-- **Last updated:** 2026-09-20T06:35:48Z
+- **Last updated:** 2026-09-20T06:57:15Z
 
 ## Log
 
@@ -429,3 +429,28 @@ are the two figures beat 1 of the video speaks, so the words and the screen now 
 with it: `src/App.tsx` is a required-strings file in the sweep for the first time, on the principle
 that a figure carried by more than one file needs a guard in each (`src/App.tsx`, `src/index.css`,
 `working/RECORDING-RUNSHEET.md`, `working/sweep-spec.json`).
+
+
+### 2026-09-20 - dc52275
+
+**Held paper, carried through the product.** I drew three logo directions and compared them at
+16px, 38px and 128px before choosing the document above a supporting ledger edge. The small mark
+stays simple; the interface carries the detail. I updated the inline component, favicon, app icon,
+wordmark, both README banners and architecture diagram together, with an additional single-colour
+mark using transparent cutouts. Every SVG was parsed and rendered for inspection.
+
+I gave arrivals a held-paper symbol, separate reading and outcome columns, inset rules and a clear
+opening affordance. A kept record now uses neutral ink rather than implying recovered money. The
+claim sheet gives the quoted clause its own rule and typography, and the drafted letter a distinct
+paper surface. Close and the worked-example label remain visible while the sheet scrolls. Totals,
+empty states, loading and sign-in now follow the same spacing and edge treatments. The existing
+ambient washes remain. Worked-example labels retain their text size and gain contrast.
+
+Both TypeScript configurations, the build, script counts and the claim sweep pass. I corrected a
+pre-existing sweep path that left the new premise guards outside its file list. A structural comparison
+found no changes to calls, computed expressions, rendering conditions or visible JSX copy. I checked
+desktop, 620px and 390px layouts using the actual components with local fictional fixtures. I exercised
+the reduced-motion stylesheet rules and confirmed they remove animations and transitions, including
+on the sheets. This was a forced-rule check, not an operating-system preference toggle. Live account
+behaviour was not retested. I updated both recording documents for the taller quotation and letter;
+the spoken narration is unchanged. These changes are committed locally and have not been deployed.
