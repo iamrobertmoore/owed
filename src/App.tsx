@@ -665,7 +665,7 @@ function Ledger({ onLeave }: { onLeave: () => void }) {
         )}
       </section>
 
-      <section style={{ marginTop: 48 }}>
+      <section className="claims" style={{ marginTop: 48 }}>
         <div className="section-head">
           <h2>Claims</h2>
           <span className="count">
