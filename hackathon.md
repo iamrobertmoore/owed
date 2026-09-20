@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-16T07:50:55Z
-- **Last updated:** 2026-09-20T06:04:21Z
+- **Last updated:** 2026-09-20T06:35:48Z
 
 ## Log
 
@@ -406,7 +406,7 @@ figures before anything on screen said what the figures were of. That line now s
 wordmark, in the same words the document title uses, and hides below 620px where there is no room
 for it (`src/index.css`, `src/App.tsx`).
 
-### 2026-09-20 - working tree
+### 2026-09-20 - 9972c04
 
 **The landing decision, argued properly and then half reversed.** The live URL lands on the ledger
 rather than on a page that sells it, and the defence of that has been that a judge should not have
