@@ -111,11 +111,41 @@ body::before {
   height: 38px;
 }
 
+/*
+  The wordmark and the sentence stack, so the mark still aligns to the middle
+  of the pair rather than to the wordmark alone.
+*/
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .brand .name {
   font-family: var(--serif);
   font-size: 27px;
   font-weight: 700;
   letter-spacing: -0.5px;
+  line-height: 1.1;
+}
+
+/*
+  Quiet on purpose. It is there for the visitor who has not been told what
+  this is, and it should not compete with the recovered figure below it.
+*/
+.brand .tagline {
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.3;
+  color: var(--muted);
+  letter-spacing: 0.1px;
+}
+
+/* On a phone the masthead is tight, so the sentence steps out of the way. */
+@media (max-width: 620px) {
+  .brand .tagline {
+    display: none;
+  }
 }
 
 /* ------------------------------------------------------------ the totals -- */

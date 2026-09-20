@@ -423,7 +423,21 @@ function Ledger({ onLeave }: { onLeave: () => void }) {
       <header className="masthead">
         <div className="brand">
           <Mark />
-          <span className="name">Owed</span>
+          {/*
+            The wordmark used to stand alone here, and the sentence that says
+            what this is lived only on the sign-in card, which a cold visitor
+            never reaches: the guest session is minted on load, so the card is
+            behind a button now. That left the first screen showing three
+            figures before it said what they were figures of. The line below is
+            the same sentence the card carries and the document title carries,
+            put where the person who never clicks anything will read it.
+          */}
+          <div className="brand-text">
+            <span className="name">Owed</span>
+            <span className="tagline">
+              Your agent holds the paper trail, so the claim finds you.
+            </span>
+          </div>
         </div>
         <div className="actions">
           {/*
