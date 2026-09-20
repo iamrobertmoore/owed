@@ -4,7 +4,7 @@
 - **Event:** Convex All Gas Hackathon
 - **What it does:** An agent that holds a person's paper trail, finds what they are owed against the counterparty's own published terms, and pursues it.
 - **Live app:** https://fantastic-hamster-482.convex.site
-- **Repo:** private
+- **Repo:** https://github.com/iamrobertmoore/owed
 - **Frontend:** Convex static hosting
 - **Convex deployment:** https://fantastic-hamster-482.convex.cloud
 - **Components:** @agentmail/convex, @firecrawl/firecrawl-convex, @convex-dev/static-hosting
