@@ -8,13 +8,54 @@
       name="description"
       content="Your agent holds the paper trail, so it finds what you are owed instead of waiting to be told. Give it an address and it reads the company's own terms, writes the letter that cites the clause, and asks you before it sends anything."
     />
+
+    <!--
+      Icons. The SVG is what a modern browser uses and it is the one that stays
+      sharp; the .ico and the PNGs are there because a tab strip, a bookmark bar
+      and an iOS home screen do not all read SVG. The apple-touch-icon is drawn
+      full bleed rather than rounded, because iOS applies its own mask and a
+      rounded source inside that mask shows the corner twice.
+    -->
     <link rel="icon" type="image/svg+xml" href="/mark.svg" />
-    <meta property="og:title" content="Owed" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#f2efe9" />
+
+    <!--
+      The share card. og:image has to be an absolute URL: a relative one
+      resolves against the scraper rather than the site and the card renders
+      blank. 1200x630 is the size every platform crops from, and it is a PNG
+      because X and LinkedIn do not render SVG in a card at all.
+    -->
+    <meta property="og:title" content="Owed: your agent holds the paper trail" />
     <meta
       property="og:description"
-      content="£71.2 billion went unrecovered in the UK in one measured year. Give your agent an address and it will find what you are owed."
+      content="£71.2 billion went unrecovered in the UK in one measured year. Give your agent an email address and it reads the company's own terms, finds what you are owed, and writes the letter."
     />
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Owed" />
+    <meta property="og:url" content="https://fantastic-hamster-482.convex.site/" />
+    <meta property="og:image" content="https://fantastic-hamster-482.convex.site/og-image.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Owed. £71.2 billion went unrecovered last year. Your agent holds the paper trail, so the claim finds you."
+    />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Owed: your agent holds the paper trail" />
+    <meta
+      name="twitter:description"
+      content="£71.2 billion went unrecovered in the UK in one measured year. Give your agent an email address and it reads the company's own terms, finds what you are owed, and writes the letter."
+    />
+    <meta name="twitter:image" content="https://fantastic-hamster-482.convex.site/og-image.png" />
+    <meta
+      name="twitter:image:alt"
+      content="Owed. £71.2 billion went unrecovered last year. Your agent holds the paper trail, so the claim finds you."
+    />
   </head>
   <body>
     <div id="root"></div>
