@@ -304,3 +304,67 @@ export const fixSky = internalAction({
     return { counterparties: cps.length, report };
   },
 });
+
+/**
+ * Put the worked example's approval gate back, so the demo can be recorded again.
+ *
+ * Beat 4 of the demo presses approve on `demo-gate`, which is the one claim the
+ * example seeds at `awaiting_approval`. Approving it is not reversible from the
+ * product, and it should not be: a person un-sending their own letter is not a
+ * feature, it is a way to lose track of what was actually said to a company.
+ *
+ * On the worked example, though, nothing left the building. `letters.approve`
+ * takes a separate branch for any claim carrying a `demoKey`: it writes an
+ * `approved` event, moves the stage to `sent`, and writes a second event saying
+ * in plain words that nothing was transmitted. No mail, no scheduler, no
+ * outbound call. So the whole of what approving a demo claim does is three
+ * database writes, and undoing it is deleting two rows and restoring one field.
+ *
+ * The seeded event list for `demo-gate` ends at `drafted`, so every `approved`
+ * and `sent` event on that claim was written by a press of the button and can
+ * go. `nextActionAt` returns to undefined because the seed never sets one for
+ * this claim: it has no deadline until the letter is actually sent.
+ *
+ * Safe to run twice, and safe to run at all only because it refuses to touch
+ * anything without a `demoKey`. A real claim that has been sent stays sent.
+ */
+export const resetDemoGate = internalMutation({
+  args: {},
+  handler: async (
+    ctx,
+  ): Promise<{ reset: number; alreadyAtGate: number; events: number }> => {
+    const claims = await ctx.db.query("claims").collect();
+    let reset = 0;
+    let alreadyAtGate = 0;
+    let events = 0;
+
+    for (const claim of claims) {
+      if (claim.demoKey !== "demo-gate") continue;
+      if (claim.stage === "awaiting_approval") {
+        alreadyAtGate += 1;
+        continue;
+      }
+
+      const onClaim = await ctx.db
+        .query("events")
+        .withIndex("by_claim", (q) => q.eq("claimId", claim._id))
+        .collect();
+
+      for (const event of onClaim) {
+        if (event.kind === "approved" || event.kind === "sent") {
+          await ctx.db.delete(event._id);
+          events += 1;
+        }
+      }
+
+      await ctx.db.patch(claim._id, {
+        stage: "awaiting_approval",
+        nextActionAt: undefined,
+        updatedAt: Date.now(),
+      });
+      reset += 1;
+    }
+
+    return { reset, alreadyAtGate, events };
+  },
+});
