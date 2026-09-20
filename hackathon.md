@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4o-mini, text-embedding-3-small
 - **Started:** 2026-09-16T07:50:55Z
-- **Last updated:** 2026-09-20T06:57:15Z
+- **Last updated:** 2026-09-20T07:13:45Z
 
 ## Log
 
@@ -454,3 +454,31 @@ the reduced-motion stylesheet rules and confirmed they remove animations and tra
 on the sheets. This was a forced-rule check, not an operating-system preference toggle. Live account
 behaviour was not retested. I updated both recording documents for the taller quotation and letter;
 the spoken narration is unchanged. These changes are committed locally and have not been deployed.
+
+
+### 2026-09-20 - 34d550f
+
+**More presence, with the evidence still in charge.** The first identity pass was too uniform: pale
+cards, fine borders and similar headings everywhere. I kept the approved held-paper mark and gave
+the product a stronger editorial rhythm. The opening now pairs a large premise with its explanation,
+above an ink-dark ledger. Recovered green and outstanding amber use lighter shades on that dark
+surface for contrast; their meanings are unchanged. The worked-example disclosure stays directly
+under the figures in its own clearly bordered strip.
+
+Arrivals now sit in one correspondence tray, with opening arrows and small paper movements on
+hover. Claim cards form a pair of columns on desktop and one on phones, making their amounts easier
+to compare. The company's quoted clause is a dark panel, the letter is white paper, and the send
+controls share an inset panel with the existing approval disclosure. Sign-in has an ink header.
+CSS contains scrolling inside an open sheet. Entrance movement no longer fades the reading content
+out, and the existing reduced-motion rules stop all motion.
+
+Only the stylesheet and a presentation class in App changed. No queries, computations, rendering
+conditions, handlers or visible copy changed. Both TypeScript checks, the production build and the
+structural comparison pass. I inspected desktop, 620px and 390px layouts, the case files, sign-in,
+empty and loading states using local fictional fixtures. Keyboard opening and Escape closing pass.
+Forced reduced-motion rules produce no active animations or transitions, including in a claim sheet;
+this still does not substitute for a live-account check or an operating-system preference toggle.
+
+I updated both recording documents: at 1280 by 720, roughly 540px of sheet scroll centres the clause
+in the local fixture. The narration remains unchanged. Script counts and claim guards pass. The
+changes are committed locally; nothing has been pushed or deployed.
