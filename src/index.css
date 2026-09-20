@@ -8,8 +8,8 @@
 :root {
   --ink: #101418;
   --ink-soft: #3a424c;
-  --muted: #6a727c;
-  --faint: #8a929c;
+  --muted: #5f6872;
+  --faint: #69717b;
   --paper: #f2efe9;
   --card: #ffffff;
   --line: rgba(16, 20, 24, 0.09);
@@ -88,7 +88,7 @@ body::before {
   gap: 20px;
   padding-bottom: 24px;
   border-bottom: 1px solid var(--line);
-  margin-bottom: 40px;
+  margin-bottom: 28px;
 }
 
 /* Two actions now sit on the right: the way to a real account, and the way
@@ -356,7 +356,7 @@ body::before {
 }
 
 .row:focus-visible {
-  outline: 2px solid var(--recovered);
+  outline: 2px solid var(--ink);
   outline-offset: 2px;
 }
 
@@ -497,10 +497,7 @@ body::before {
   color: var(--recovered);
 }
 
-/*
-  The worked example chip. Quiet by design: it exists so nobody mistakes
-  seeded content for their own ledger, not to draw the eye.
-*/
+/* Provenance must be legible alongside the title, including at phone width. */
 .chip {
   display: inline-block;
   vertical-align: 2px;
@@ -513,7 +510,7 @@ body::before {
   border-radius: 999px;
   border: 1px solid var(--line);
   background: rgba(16, 20, 24, 0.04);
-  color: var(--faint);
+  color: var(--ink-soft);
 }
 
 /* ------------------------------------------------------------- the sheet -- */
@@ -590,7 +587,7 @@ body::before {
   font-family: var(--serif);
   font-size: 16px;
   line-height: 1.6;
-  border-left: 3px solid var(--recovered);
+  border-left: 3px solid var(--ink);
   padding-left: 16px;
   color: var(--ink);
 }
@@ -776,13 +773,13 @@ button.act.ghost {
 }
 
 .field:focus {
-  outline: 2px solid var(--recovered);
+  outline: 2px solid var(--ink);
   outline-offset: 1px;
   border-color: transparent;
 }
 
 .error {
-  color: #a4321f;
+  color: var(--ink);
   font-size: 14px;
   margin-top: 12px;
 }
@@ -941,11 +938,7 @@ body::after {
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
-/*
-  Rows already lifted on hover. The lift is now seated on the new shadow scale
-  and picks up a trace of the recovered green in the border, so hovering reads
-  as the row becoming active rather than as a box growing a shadow.
-*/
+/* Neutral interaction edges keep recovery green reserved for actual money. */
 .row {
   transition:
     box-shadow 220ms cubic-bezier(0.2, 0.7, 0.3, 1),
@@ -956,7 +949,7 @@ body::after {
 
 .row:hover {
   transform: translateY(-2px);
-  border-color: rgba(14, 124, 90, 0.22);
+  border-color: var(--line-strong);
 }
 
 /* A row that opens nothing should not pretend it does. */
@@ -1033,5 +1026,315 @@ button.act.ghost:hover {
   .row,
   button.act {
     transition: none;
+  }
+}
+
+/* =========================================================== held paper ==
+   The mark is a document held above a supporting edge. The same two details
+   recur here: inset rules and a second edge beneath a sheet of white stock.
+   No extra colour vocabulary, downloaded fonts, or decorative hero content.
+   The earlier ambient washes and entrance timing remain in place.
+   ======================================================================== */
+
+:root {
+  --rule: rgba(16, 20, 24, 0.12);
+  --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+::selection { background: #d9ded9; color: var(--ink); }
+
+.masthead .actions { margin: 0; flex-shrink: 0; }
+.brand { min-width: 0; }
+.brand svg { flex-shrink: 0; }
+.brand .name { font-size: 29px; letter-spacing: -0.8px; }
+.brand .tagline { margin-top: 3px; }
+.premise { max-width: 72ch; }
+.premise-figure { font-size: 25px; }
+.premise-body { max-width: 76ch; }
+
+/* One ledger, with a generous recovered figure and two supporting columns. */
+.totals { position: relative; border-radius: 16px; }
+.totals > div { position: relative; padding: 24px 28px; }
+.totals > div::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 28px;
+  right: 28px;
+  height: 2px;
+  background: var(--line-strong);
+}
+.totals > div:first-child::before { background: var(--recovered); }
+.totals > div:nth-child(2)::before { background: var(--owed); }
+.totals .label { margin-bottom: 16px; color: var(--muted); letter-spacing: 1.35px; }
+.totals .value { font-size: 44px; font-weight: 400; letter-spacing: -1.8px; }
+.totals > div:first-child .value { font-size: 52px; line-height: 44px; }
+.totals .sub { margin-top: 13px; }
+.example-note {
+  max-width: none;
+  padding: 0 0 0 14px;
+  border-left: 2px solid var(--line-strong);
+  color: var(--ink-soft);
+  margin-bottom: 30px;
+}
+
+/* Address as a held document, with its instructions on the same sheet. */
+.address {
+  position: relative;
+  padding: 22px 26px 24px;
+  margin-bottom: 34px;
+  border-radius: 12px;
+  box-shadow: 0 4px 0 -1px var(--paper), 0 5px 0 -1px var(--line-strong), var(--shadow);
+}
+.address > div:first-child { flex: 1 1 300px; }
+.address > div:last-child { flex: 1 1 460px; }
+.address .hint { flex: 1 1 270px; }
+.address .value { font-size: 16px; letter-spacing: -0.25px; }
+.address .label { color: var(--muted); }
+
+.section-head { gap: 12px; }
+.section-head h2 { font-size: 23px; letter-spacing: -0.5px; }
+.section-head .count { text-align: right; }
+.shell > section > .section-head { padding-bottom: 12px; border-bottom: 1px solid var(--line-strong); }
+
+/* A ledger row has a reading column and an outcome column. The small arrow
+   belongs only to actual buttons; plain arrivals retain a resting surface. */
+.rows { gap: 12px; }
+.row {
+  position: relative;
+  grid-template-columns: 6px minmax(0, 1fr) auto;
+  gap: 18px;
+  padding: 21px 48px 21px 22px;
+  border-radius: 11px;
+  box-shadow: 0 1px 2px rgba(16, 20, 24, 0.025);
+  background-image: linear-gradient(110deg, #fff 72%, #fcfbf9);
+}
+.row > span:nth-child(2) { min-width: 0; }
+.row .title { line-height: 1.45; overflow-wrap: anywhere; }
+.row .meta { margin-top: 5px; gap: 4px 9px; line-height: 1.5; overflow-wrap: anywhere; }
+.row .dot { width: 4px; height: 28px; border-radius: 2px; }
+.row .amount { font-size: 24px; font-weight: 400; letter-spacing: -0.5px; }
+button.row::after {
+  content: "";
+  position: absolute;
+  right: 22px;
+  top: calc(50% - 3px);
+  width: 6px;
+  height: 6px;
+  border-top: 1.5px solid var(--muted);
+  border-right: 1.5px solid var(--muted);
+  transform: rotate(45deg);
+  transition: translate 180ms var(--ease);
+}
+button.row:hover::after { translate: 3px 0; }
+.row:hover { transform: translateY(-1px); }
+.chip {
+  color: var(--ink-soft);
+  background: #f3f1ed;
+  border-color: var(--line-strong);
+  border-radius: 4px;
+  font-size: 11px;
+  letter-spacing: 0.65px;
+  vertical-align: 1px;
+  white-space: nowrap;
+}
+.pill { border-radius: 5px; font-size: 10.5px; letter-spacing: 0.65px; padding: 5px 9px; }
+.pill.owed { color: #805317; }
+
+/* Keeping a record is not recovering money. Arrival outcomes get ink, with
+   a tiny held-paper shape that repeats the mark's document and offset edge. */
+.arrivals .row { grid-template-columns: 24px minmax(0, 1fr) auto; align-items: start; }
+.arrivals .row .dot {
+  position: relative;
+  margin: 4px 0 0 3px;
+  width: 20px;
+  height: 25px;
+  border: 1px solid var(--line-strong);
+  border-radius: 2px 5px 2px 2px;
+  background: linear-gradient(var(--muted), var(--muted)) 5px 8px / 9px 1px no-repeat,
+    linear-gradient(var(--muted), var(--muted)) 5px 12px / 6px 1px no-repeat, #f7f5f1;
+}
+.arrivals .row .dot::after {
+  content: "";
+  position: absolute;
+  left: -5px;
+  bottom: -5px;
+  width: 18px;
+  height: 20px;
+  border-left: 1px solid var(--line-strong);
+  border-bottom: 1px solid var(--line-strong);
+  border-radius: 0 0 0 2px;
+}
+.arrivals .pill, .arrivals .pill.recovered {
+  color: var(--ink-soft);
+  background: #f1f2ef;
+  border: 1px solid var(--line);
+  margin-top: 3px;
+}
+.arrivals .row .reason {
+  display: block;
+  margin-top: 13px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  max-width: 76ch;
+  color: var(--muted);
+}
+.arrivals .reason .who { color: var(--ink-soft); margin-right: 9px; }
+
+/* Sheets read as a case file. A quiet header remains available above the
+   evidence, a clause has its own typography, and a letter has a paper edge. */
+.sheet { padding: 28px 32px 72px; background-image: linear-gradient(135deg, #f8f6f1, var(--paper) 48%); }
+.sheet > .section-head {
+  position: sticky;
+  top: -1px;
+  z-index: 2;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 0 0 25px;
+  padding: 10px 0 14px;
+  background: #f7f5ef;
+  box-shadow: 0 -29px 0 #f7f5ef, 0 1px 0 var(--line-strong);
+}
+.sheet > .section-head .act { margin-left: auto; padding: 8px 13px; }
+.sheet > .section-head .chip { margin-left: 0; }
+.sheet > .section-head .pill { color: var(--ink-soft); background: rgba(16,20,24,0.06); }
+.sheet h2 { font-size: 30px; line-height: 1.2; letter-spacing: -0.75px; text-wrap: pretty; }
+.sheet .basis { font-size: 15px; line-height: 1.65; margin: 12px 0 25px; }
+.sheet > h2 + .block { margin-top: 24px; }
+.block { border-radius: 10px; padding: 22px 24px; margin-bottom: 18px; box-shadow: var(--shadow); overflow-wrap: anywhere; }
+.block .label { color: var(--muted); font-size: 10.5px; letter-spacing: 1.35px; }
+.amount-block { position: relative; background: linear-gradient(125deg, #fff, #fcfbf8); }
+.amount-block::after {
+  content: "";
+  position: absolute;
+  top: 22px;
+  right: 24px;
+  width: 22px;
+  height: 28px;
+  border-right: 1px solid var(--line-strong);
+  border-bottom: 1px solid var(--line-strong);
+  box-shadow: 4px 4px 0 -1px #fff, 5px 5px 0 -1px var(--line-strong);
+}
+.amount-block .value { padding-right: 40px; }
+.evidence-block > .label, .letter-block > .label { padding-bottom: 12px; margin-bottom: 16px; border-bottom: 1px solid var(--line); }
+.provision-block { border-top: 3px solid var(--ink); padding-top: 20px; }
+.quote { font-size: 18px; line-height: 1.7; border-left-width: 2px; padding-left: 17px; }
+.quote .ref { display: table; padding: 3px 7px; margin: 0 0 12px; background: #f2f0eb; color: var(--ink-soft); font-size: 11.5px; border-radius: 3px; }
+.letter-block { border-radius: 4px 10px 10px 4px; box-shadow: 0 4px 0 -1px #fcfbf9, 0 5px 0 -1px var(--line-strong), var(--shadow); margin-bottom: 23px; }
+.letter { font-family: var(--serif); font-size: 16px; line-height: 1.8; color: var(--ink-soft); }
+.sheet a { text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.sheet .reason { display: block; padding: 12px 14px; border-left: 2px solid var(--line-strong); background: #f7f6f2; }
+.sheet .reason .who { display: block; color: var(--ink-soft); margin-bottom: 5px; }
+.timeline time { color: var(--muted); font-family: var(--mono); font-size: 11px; margin-bottom: 4px; }
+.timeline li { padding-bottom: 20px; }
+.timeline li:last-child { padding-bottom: 0; }
+
+/* Empty, loading, and sign-in are designed surfaces, not gaps between them. */
+.empty, .loading { border-style: solid; box-shadow: var(--shadow); background: linear-gradient(140deg, #fff, #fcfbf9); }
+.empty { text-align: left; padding: 30px 32px; border-radius: 11px; line-height: 1.7; }
+.empty strong { font-size: 23px; line-height: 1.3; margin-bottom: 12px; }
+.empty::before {
+  content: "";
+  display: block;
+  width: 24px;
+  height: 30px;
+  border: 1px solid var(--line-strong);
+  border-radius: 2px 5px 2px 2px;
+  background: linear-gradient(var(--line-strong), var(--line-strong)) 6px 9px / 12px 2px no-repeat;
+  box-shadow: -4px 4px 0 -1px #fcfbf9, -5px 5px 0 -1px var(--line-strong);
+  margin: 0 0 22px 4px;
+}
+.example-invite { justify-content: flex-start; border-top-style: solid; }
+.example-invite .hint { color: var(--ink-soft); }
+.loading { padding: 34px 28px; text-align: left; color: var(--ink-soft); }
+.loading::before {
+  content: "";
+  display: inline-block;
+  width: 24px;
+  height: 2px;
+  margin-right: 12px;
+  vertical-align: 5px;
+  background: var(--ink);
+  transform-origin: left;
+  animation: reading 1600ms ease-in-out infinite alternate;
+}
+@keyframes reading { from { opacity: 0.25; transform: scaleX(0.45); } to { opacity: 0.8; transform: scaleX(1); } }
+.signin { max-width: 460px; margin: 44px auto; padding: 32px; border-radius: 16px; box-shadow: 0 5px 0 -1px #fbfaf7, 0 6px 0 -1px var(--line-strong), var(--shadow-lift); }
+.signin-brand { display: flex; align-items: center; gap: 12px; padding-bottom: 23px; margin-bottom: 23px; border-bottom: 1px solid var(--line); }
+.signin-brand h1 { margin: 0; }
+.signin-brand svg { flex-shrink: 0; }
+.signin form { padding-top: 22px; border-top: 1px solid var(--line); }
+.signin .act { width: 100%; }
+.field { background: #faf9f6; color: var(--ink); border-radius: 7px; padding: 12px 14px; }
+.field::placeholder { color: var(--muted); opacity: 1; }
+.error { padding: 12px 14px; border-left: 3px solid var(--ink); background: #f0ede7; }
+
+/* Keyboard interaction uses ink, never a colour that might suggest recovery. */
+:where(button, a, input):focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; }
+button.act { border-radius: 7px; min-height: 44px; }
+button:disabled { opacity: 0.55; cursor: wait; }
+button:disabled:hover { transform: none; filter: none; }
+.spend { color: var(--muted); line-height: 1.65; }
+
+/* Preserve a compact top of the ledger at tablet width. On phones the hero
+   leads a pair of smaller totals rather than making three tall full rows. */
+@media (min-width: 621px) and (max-width: 820px) {
+  .brand .tagline { max-width: 32ch; font-size: 12px; }
+  .totals { grid-template-columns: 1.25fr 1fr 0.8fr; }
+  .totals > div { padding: 22px 18px; }
+  .totals .value { font-size: 36px; }
+  .totals > div:first-child .value { font-size: 44px; }
+  .totals .sub { font-size: 12px; }
+  .arrivals .row { grid-template-columns: 24px minmax(0, 1fr); }
+  .arrivals .row > .pill { grid-column: 2; justify-self: start; margin-top: -6px; }
+}
+@media (max-width: 620px) {
+  .shell { padding: 22px 18px 64px; }
+  .masthead { gap: 12px; padding-bottom: 20px; margin-bottom: 24px; }
+  .masthead .act { padding: 9px 12px; font-size: 12px; }
+  .brand { gap: 9px; }
+  .brand .name { font-size: 27px; }
+  .premise-figure { font-size: 23px; }
+  .premise-body { font-size: 13.5px; }
+  .totals { grid-template-columns: 1fr 1fr; }
+  .totals > div { padding: 20px; }
+  .totals > div:first-child { grid-column: 1 / -1; }
+  .totals > div::before { left: 20px; right: 20px; }
+  .totals .value { font-size: 34px; }
+  .totals > div:first-child .value { font-size: 48px; }
+  .totals .sub { margin-top: 10px; font-size: 12.5px; }
+  .totals .label { margin-bottom: 12px; }
+  .example-note { font-size: 13px; }
+  .address { padding: 20px; gap: 15px; }
+  .address .hint { font-size: 13px; }
+  .section-head { align-items: baseline; flex-wrap: wrap; gap: 4px 12px; }
+  .section-head .count { font-size: 12px; text-align: left; }
+  .row { grid-template-columns: 4px minmax(0, 1fr) auto; gap: 10px; padding: 18px 31px 18px 15px; }
+  .row .title { font-size: 15px; }
+  .row .meta { font-size: 12px; }
+  .row .amount { font-size: 20px; }
+  button.row::after { right: 15px; width: 5px; height: 5px; }
+  .row .chip { display: table; margin: 6px 0; }
+  .arrivals .row { grid-template-columns: 23px minmax(0, 1fr); gap: 10px 14px; }
+  .arrivals .row > .pill { grid-column: 2; justify-self: start; margin-top: 0; white-space: normal; }
+  .arrivals .row .reason { font-size: 12.5px; }
+  .sheet { padding: 20px 18px 52px; }
+  .sheet > .section-head { gap: 8px; margin-bottom: 24px; }
+  .sheet > .section-head .chip { font-size: 11px; }
+  .sheet > .section-head .act { min-height: 40px; font-size: 13px; }
+  .sheet h2 { font-size: 27px; }
+  .block { padding: 20px; }
+  .quote { font-size: 17px; padding-left: 13px; }
+  .letter { font-size: 15.5px; }
+  .empty { padding: 26px 22px; font-size: 14px; }
+  .signin { margin: 16px auto; padding: 25px; }
+}
+
+/* Stop motion completely, including modal entrances and decorative readers. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
   }
 }

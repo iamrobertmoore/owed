@@ -90,7 +90,7 @@ export function ClaimSheet({
             <h2>{claim.title}</h2>
             <p className="basis">{claim.basis}</p>
 
-            <div className="block">
+            <div className="block amount-block">
               <div className="label">
                 {claim.amountRecovered !== undefined
                   ? "Recovered"
@@ -121,7 +121,7 @@ export function ClaimSheet({
             </div>
 
             {detail.paper.length > 0 && (
-              <div className="block">
+              <div className="block evidence-block">
                 <div className="label">The paper it was found from</div>
                 {detail.paper.map((m) => (
                   <div key={m._id} style={{ marginBottom: 14 }}>
@@ -141,7 +141,7 @@ export function ClaimSheet({
             )}
 
             {detail.provision && (
-              <div className="block">
+              <div className="block provision-block">
                 <div className="label">Their own words</div>
                 <div className="quote">
                   <span className="ref">{detail.provision.reference}</span>
@@ -155,7 +155,7 @@ export function ClaimSheet({
                     href={detail.provision.documentUrl}
                     target="_blank"
                     rel="noreferrer"
-                    style={{ color: "var(--recovered)" }}
+                    style={{ color: "var(--ink-soft)" }}
                   >
                     read it at the source
                   </a>
@@ -165,7 +165,7 @@ export function ClaimSheet({
             )}
 
             {draft && (
-              <div className="block">
+              <div className="block letter-block">
                 <div className="label">
                   {awaiting
                     ? "Ready to send"

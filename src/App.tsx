@@ -156,7 +156,10 @@ function SignIn({ autoFailed }: { autoFailed: string | null }) {
   return (
     <div className="shell">
       <div className="signin">
-        <h1>Owed</h1>
+        <div className="signin-brand">
+          <Mark />
+          <h1>Owed</h1>
+        </div>
         <p>
           Your agent holds the paper trail, so the claim finds you. It notices what you
           were owed instead of waiting to be told, reads the company's own terms, and
@@ -164,7 +167,7 @@ function SignIn({ autoFailed }: { autoFailed: string | null }) {
         </p>
 
         {autoFailed ? (
-          <p style={{ color: "var(--owed)", fontSize: 14 }}>{autoFailed}</p>
+          <p style={{ color: "var(--ink-soft)", fontSize: 14 }}>{autoFailed}</p>
         ) : null}
 
         <button className="act primary" onClick={guest} disabled={busy} type="button">
@@ -181,6 +184,7 @@ function SignIn({ autoFailed }: { autoFailed: string | null }) {
           <input
             className="field"
             type="email"
+            aria-label="Email"
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -189,6 +193,7 @@ function SignIn({ autoFailed }: { autoFailed: string | null }) {
           <input
             className="field"
             type="password"
+            aria-label="Password"
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -208,7 +213,7 @@ function SignIn({ autoFailed }: { autoFailed: string | null }) {
               border: 0,
               padding: 0,
               font: "inherit",
-              color: "var(--recovered)",
+              color: "var(--ink-soft)",
               cursor: "pointer",
               textDecoration: "underline",
             }}
@@ -565,7 +570,7 @@ function Ledger({ onLeave }: { onLeave: () => void }) {
         kept in its own words rather than summarised, because a summary is the
         thing this product exists to avoid.
       */}
-      <section>
+      <section className="arrivals">
         <div className="section-head">
           <h2>Arrivals</h2>
           <span className="count">

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Owed">
+  <title>Owed</title>
+  <!-- One ink with transparent paper cutouts. Inherits color when inlined. -->
+  <path fill="currentColor" fill-rule="evenodd" d="M14 0H50A14 14 0 0 1 64 14V50A14 14 0 0 1 50 64H14A14 14 0 0 1 0 50V14A14 14 0 0 1 14 0Z M24 12H40L48 20V40H24Z M12 24H20V44H48V52H12Z M30 28H42V32H30Z"/>
+</svg>

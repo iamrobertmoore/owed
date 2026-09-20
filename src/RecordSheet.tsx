@@ -68,7 +68,7 @@ export function RecordSheet({
 
             <h2>{record.description}</h2>
 
-            <div className="block">
+            <div className="block amount-block">
               <div className="label">
                 {record.amount === undefined ? "Amount" : "What it came to"}
               </div>
@@ -129,7 +129,7 @@ export function RecordSheet({
             </div>
 
             {record.paper.length > 0 ? (
-              <div className="block">
+              <div className="block evidence-block letter-block">
                 <div className="label">The paper it was read from</div>
                 {record.paper.map((m) => (
                   <div key={m._id} style={{ marginBottom: 16 }}>

@@ -3,7 +3,7 @@
 <desc id="desc">The owner forwards the paper trail to an address the agent holds. Convex records it, reads the counterparty's own published terms with Firecrawl, and finds an entitlement in the gap between the two. A letter is drafted citing the provision by reference, the owner approves it, it is sent from the agent's own address, and the reply is classified. Only a concession settles anything. A cron sweep escalates on silence and the ledger reports money actually recovered.</desc>
 
 <style>
-  .bg      { fill: #faf8f5; }
+  .bg      { fill: #f2efe9; }
   .panel   { fill: #f4f1ec; stroke: #e2ddd5; stroke-width: 1.5; }
   .card    { fill: #ffffff; stroke: #e2ddd5; stroke-width: 1.5; }
   .actor   { fill: #ffffff; stroke: #d8d2c8; stroke-width: 1.5; }
@@ -14,7 +14,7 @@
 
   .h1      { font: 700 27px Georgia, "Times New Roman", serif; fill: #101418; }
   .h2      { font: 400 13.5px ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; fill: #6a727c; }
-  .sect    { font: 700 11px ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; fill: #8a929c; letter-spacing: 1.6px; }
+  .sect    { font: 700 11px ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; fill: #69717b; letter-spacing: 1.6px; }
   .actor-t { font: 700 14px ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; fill: #101418; }
   .actor-b { font: 400 11.5px ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; fill: #6a727c; }
   .step-t  { font: 700 15px ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; fill: #101418; }
@@ -28,8 +28,13 @@
 <rect class="bg" width="1180" height="800"/>
 
 <!-- head -->
-<text class="h1" x="40" y="44">Owed</text>
-<text class="h2" x="150" y="44">One address for the paper trail. The money it is owed comes back.</text>
+<g transform="translate(40 18) scale(0.5)"><rect width="64" height="64" rx="14" fill="#101418" />
+      <path d="M24 12h16l8 8v20H24z" fill="#F2EFE9" />
+      <path d="M40 12v8h8" fill="#101418" opacity="0.25" />
+      <path d="M12 24h8v20h28v8H12z" fill="#F2EFE9" />
+      <path d="M30 28h12v4H30z" fill="#101418" /></g>
+<text class="h1" x="84" y="44">Owed</text>
+<text class="h2" x="174" y="44">One address for the paper trail. The money it is owed comes back.</text>
 
 <!-- actors -->
 <rect class="actor" x="40" y="62" width="300" height="58" rx="12"/>
