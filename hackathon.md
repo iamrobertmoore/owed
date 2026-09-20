@@ -405,3 +405,27 @@ moved the sign-in card behind a header button, and the card was the only surface
 figures before anything on screen said what the figures were of. That line now sits under the
 wordmark, in the same words the document title uses, and hides below 620px where there is no room
 for it (`src/index.css`, `src/App.tsx`).
+
+### 2026-09-20 - working tree
+
+**The landing decision, argued properly and then half reversed.** The live URL lands on the ledger
+rather than on a page that sells it, and the defence of that has been that a judge should not have
+to forward an email to find out what this does. That defence is sound for somebody arriving from a
+listing that already told them what this is, and it is not sound for anybody else: a stranger who
+opens this URL cold reads a currency figure before anything on the page says why a currency figure
+should exist. Landing on the product is a judging decision, not a product decision, and the two had
+been quietly conflated. The zero-click landing stays, because the reader it is aimed at is the one
+this entry is judged by. What changes is that the page now carries the sentence the sales page would
+have carried. A short band above the totals states the government figure this whole product is an
+argument about, £71.2 billion of net consumer detriment with the 22% of problems where nobody
+complained at all, both already sourced in the README to the Department for Business and Trade's
+Consumer Detriment Survey 2024, and neither a claim about what this product recovers. Under it, when
+the worked example is on the ledger, one line says why there is a working ledger here instead of a
+sign-up form. It deliberately does not repeat the worked-example label: that belongs in the note
+under the totals, next to the figures it qualifies, and saying it twice two hundred pixels apart
+would read as nervous rather than careful. The band is set as a standfirst, not a hero, because a
+marketing banner here would undo the thing the zero-click landing is for. The two figures it shows
+are the two figures beat 1 of the video speaks, so the words and the screen now agree. Guards moved
+with it: `src/App.tsx` is a required-strings file in the sweep for the first time, on the principle
+that a figure carried by more than one file needs a guard in each (`src/App.tsx`, `src/index.css`,
+`working/RECORDING-RUNSHEET.md`, `working/sweep-spec.json`).

@@ -148,6 +148,61 @@ body::before {
   }
 }
 
+/* ----------------------------------------------------------- the premise -- */
+
+/*
+  The band between the masthead and the ledger. It exists because the live URL
+  lands on the product rather than on a page that explains it, which is right
+  for a reader who arrived from a listing and wrong for one who did not. It is
+  set as a standfirst rather than a hero: one figure at reading size, two short
+  paragraphs, no button, no box. A marketing banner here would undo the thing
+  the zero-click landing is for, which is that the product is the first thing
+  on screen.
+*/
+.premise {
+  margin-bottom: 32px;
+  max-width: 62ch;
+}
+
+.premise-figure {
+  font-family: var(--serif);
+  font-size: 23px;
+  line-height: 1.25;
+  letter-spacing: -0.3px;
+  color: var(--ink);
+  margin: 0 0 8px;
+}
+
+.premise-body {
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--muted);
+  margin: 0;
+}
+
+/*
+  The orienting line is a different kind of statement from the one above it:
+  the paragraph above is about the world, this one is about this page. The
+  rule separates them without spending a heading on it.
+*/
+.premise-orient {
+  margin-top: 10px;
+  padding-left: 12px;
+  border-left: 2px solid var(--line-strong);
+  color: var(--ink-soft);
+}
+
+@media (max-width: 620px) {
+  .premise {
+    margin-bottom: 26px;
+  }
+
+  .premise-figure {
+    font-size: 20px;
+  }
+}
+
 /* ------------------------------------------------------------ the totals -- */
 
 .totals {
@@ -842,6 +897,7 @@ body::after {
   before a viewer has read the first figure.
 */
 .masthead,
+.premise,
 .totals,
 .example-note,
 .address,
@@ -850,7 +906,8 @@ body::after {
 }
 
 .masthead { animation-delay: 0ms; }
-.totals { animation-delay: 60ms; }
+.premise { animation-delay: 40ms; }
+.totals { animation-delay: 90ms; }
 .example-note { animation-delay: 100ms; }
 .address { animation-delay: 140ms; }
 .shell > section:nth-of-type(1) { animation-delay: 180ms; }
@@ -964,6 +1021,7 @@ button.act.ghost:hover {
   }
 
   .masthead,
+  .premise,
   .totals,
   .example-note,
   .address,

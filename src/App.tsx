@@ -466,6 +466,48 @@ function Ledger({ onLeave }: { onLeave: () => void }) {
         </div>
       </header>
 
+      {/*
+        Why there is anything on this screen at all.
+
+        The live URL lands on the ledger rather than on a sales page, which is
+        the right trade for somebody arriving from a listing that already told
+        them what this is. It is the wrong trade for somebody arriving cold,
+        because the first thing they read is a figure, and a figure explains
+        nothing about why the figure should exist. This band is the sentence
+        that would otherwise be on a page they never see.
+
+        Both numbers are the government's and are sourced in the README: the
+        Department for Business and Trade's Consumer Detriment Survey 2024,
+        published 27 March 2025. Net means after everything people did manage
+        to get back. Nothing here is a claim about what this product recovers.
+      */}
+      <div className="premise">
+        <p className="premise-figure">
+          &pound;71.2 billion went unrecovered last year.
+        </p>
+        <p className="premise-body">
+          That is the UK government&rsquo;s own figure for net consumer
+          detriment: what was lost and stayed lost after everything people did
+          manage to get back. In 22% of those problems nobody complained at
+          all, because chasing it costs an evening. Owed moves that evening
+          onto something that already holds the paperwork.
+        </p>
+        {/*
+          Purpose, not labelling. The worked example is named by the note under
+          the totals, which sits there on purpose so the disclaimer is next to
+          the figures it qualifies. Saying it twice, two hundred pixels apart,
+          would make the page read as nervous rather than careful. What this
+          line does instead is answer the question the layout provokes: why
+          there is a ledger here and not a sign-up form.
+        */}
+        {isExample && (
+          <p className="premise-body premise-orient">
+            There is a working ledger below rather than a sign-up form, so you
+            can watch the agent do it before you forward anything of your own.
+          </p>
+        )}
+      </div>
+
       <div className="totals">
         <div>
           <div className="label">Recovered</div>
