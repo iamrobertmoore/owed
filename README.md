@@ -12,7 +12,7 @@
 
 <p align="center"><a href="https://fantastic-hamster-482.convex.site">Open the ledger</a> · <a href="https://fantastic-hamster-482.convex.site#claim=demo-found">Read a claim it found</a> · <a href="https://fantastic-hamster-482.convex.site#claim=demo-polite">See an apology settle nothing</a></p>
 
-Every other tool in this space asks you to describe what went wrong. Owed already has the paper.
+Owed does not wait for you to notice that something went wrong. It already has the paper.
 
 You forward what lands in your inbox anyway: order confirmations, bookings, renewal notices. Owed gives your agent an email address of its own, reads the company's own published terms, works out what you are owed, writes the letter that cites the clause by its reference, and asks you before it sends anything. Then it runs the chase on the deadline the company itself published, and it only marks a claim settled when somebody actually concedes.
 
