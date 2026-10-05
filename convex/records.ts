@@ -613,7 +613,7 @@ export const one = query({
       example's rows carry nothing on that field, because the seed writes the
       link the other way: each message names the record it became. Reading only
       the record's own field leaves the sheet's most useful block empty on every
-      example ledger, which is the screen a judge sees first.
+      example ledger, which is the screen a new visitor sees first.
 
       Derived here rather than backfilled, the same way `list` derives
       provenance: no migration, and no ledger left behind on an old shape. Two

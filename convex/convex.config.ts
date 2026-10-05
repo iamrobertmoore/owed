@@ -34,7 +34,7 @@ app.use(firecrawl, {
 // "Component agentmail has no env var named AGENTMAIL_API_KEY". A component
 // runs isolated from the app's environment, so the key the deployment holds
 // can never reach the component, and every call it made to the provider failed
-// on the judged deployment. `convex/agentmail.ts` records what was measured
+// on the production deployment. `convex/agentmail.ts` records what was measured
 // and what the app does instead. The component keeps the inbound half, which
 // is the half that needs no credential.
 app.use(agentmail);

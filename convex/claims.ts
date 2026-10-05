@@ -247,8 +247,8 @@ export type SpendSummary = {
  * Resolve a worked example slug against the caller's own ledger.
  *
  * The README links to `#claim=demo-found`. A Convex id belongs to whoever
- * created the row, so a link built from one is dead for every other visitor,
- * which is every judge. The slug is stable and portable, and this turns it
+ * created the row, so a link built from one is dead for every other visitor.
+ * The slug is stable and portable, and this turns it
  * into the visitor's own copy of the example.
  */
 export const byDemoKey = query({
@@ -361,7 +361,7 @@ export const detail = query({
 
       Filtered in memory over `by_user` rather than given an index of its own,
       deliberately: the schema's index count is a published figure in the
-      README, the architecture diagram and the submission, and a new index
+      README and the architecture diagram, and a new index
       would make four artefacts wrong to save one pass over a user's own
       messages. The set is bounded by one person's paper trail.
     */

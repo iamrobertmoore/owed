@@ -246,7 +246,7 @@ function documentShape(url: string): { shape: string; locale: string | null } | 
  * document to zero or below, where the caller's `score > 0` test silently
  * dropped it. Measured: Spotify's `/uk/legal/end-user-agreement` came out at
  * **1**, so one more path segment would have made the consumer contract of a
- * judged counterparty invisible to the crawl. A preference that can exclude is
+ * real counterparty invisible to the crawl. A preference that can exclude is
  * not a preference.
  */
 function classify(url: string): { score: number; deprioritised: boolean; depth: number } {

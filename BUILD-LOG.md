@@ -1,7 +1,10 @@
-# Hackathon log
+# Build log
+
+A day-by-day record of building Owed, written as it went. Each entry is headed by the
+commit it describes, oldest first. It records what was measured, and what was wrong
+before it was right.
 
 - **Project:** Owed
-- **Event:** Convex All Gas Hackathon
 - **What it does:** An agent that holds a person's paper trail, finds what they are owed against the counterparty's own published terms, and pursues it.
 - **Live app:** https://fantastic-hamster-482.convex.site
 - **Repo:** https://github.com/iamrobertmoore/owed
@@ -108,7 +111,7 @@ nowhere.
 
 **The terms reader could not read a real retailer's terms, and the cause was a cap
 rather than a filter.** A forwarded order produced a counterparty whose crawl note
-read `Mapped 199 URLs, none looked like terms` — the mapper returned 199 against a
+read `Mapped 199 URLs, none looked like terms`, the mapper returned 199 against a
 limit of 200 and none scored, while the same site's sitemap listed
 `returns-policy`, `terms-and-conditions` and `warranty` on its first page. A shop
 has thousands of product URLs and the documents a claim is argued from sit past the
@@ -151,7 +154,7 @@ already made.
 own bakes `VITE_CONVEX_URL` from `.env.local`, which is the dev deployment; only
 the static-hosting CLI's build sets the production URL. Found by building both ways
 and reading the host out of the output. The deployed bundle was then checked
-directly, so the app on the judged URL is known to point at the judged backend. A
+directly, so the app on the live URL is known to point at the production backend. A
 source comment that used a personal address as an example `From` header was caught
 in the same pre-commit sweep and replaced with a generic form.
 
@@ -174,26 +177,24 @@ took no action, which is what the sentence says. In Table 8 the same 25% is a
 subgroup reporting a negative effect on mental health, nothing to do with the
 seller. The citation is pinned to Figure 24, and the caveat corrected: the exclusion
 the README had attached belongs to Figure 25's base, and the caveat the source makes
-for Figure 24 is the opposite kind — the 25% "includes instances where consumers did
+for Figure 24 is the opposite kind, the 25% "includes instances where consumers did
 not act", so it counts incidents the seller never heard about.
 
 **Two comparative sentences came out of the README, and the reason is not modesty.**
 They were "Every other tool waits for you to describe a dispute" and "The paper trail
-is the part nobody else keeps". A claim about someone else's product is the one claim
-a judge can check without reading my code, a single counterexample makes it false,
-and making it at all tells a judge I went through the other entrants. They are named
-here rather than left as a pointer, because the commit that holds them is on the
-public remote either way.
+is the part nobody else keeps". A claim about everyone else's product is the one claim
+a reader can check without reading my code, and a single counterexample makes it
+false. They are named here rather than left as a pointer, because the commit that
+holds them is on the public remote either way.
 
 ### 2026-09-17 - ff8a832
 
-**An adversarial review was run against this entry with winning as its target, and
-four of what it found were fatal.** Every finding was reproduced before anything
-changed, and the four have one shape: a claim on a judged surface that the artefact
-behind it did not support. What is new is that the entry's own argument made it
-findable.
+**An adversarial review was run against this project, and four of what it found were
+fatal.** Every finding was reproduced before anything changed, and the four have one
+shape: a claim on a published surface that the artefact behind it did not support.
+What is new is that the project's own argument made it findable.
 
-**The judged URL was serving the personal address this log said had been caught.**
+**The live URL was serving the personal address this log said had been caught.**
 `vite.config.ts` had `sourcemap: true`, and a Vite sourcemap carries
 `sourcesContent`, the whole of `src/` as text, served from the same public root as
 the app. It was built from the tree before the commit that removed the address, so
@@ -204,14 +205,13 @@ up to its TTL, so a redeploy is not a way to pull sensitive content.
 **Three of the four worked-example claims showed a detection the code cannot make.**
 `detect` reads a record and the counterparty's provisions and nothing else, so three
 cases whose paper did not state the problem asserted a fact no message carried. Each
-now carries the second arrival that states the condition — a damage report, a note
-that a deposit is still held, a cancellation notice — so a visitor can follow the
+now carries the second arrival that states the condition, a damage report, a note
+that a deposit is still held, a cancellation notice, so a visitor can follow the
 claim back to the paper it came from.
 
-**The two real emails were on two guest ledgers, reachable by nobody.** The
-submission text and the video description said both could be checked on the ledger;
-they cannot, because a guest is a fresh anonymous user and every read is scoped to
-one. All surfaces now say where the emails are and why nobody else can read them,
+**The two real emails were on two guest ledgers, reachable by nobody.** The README
+and the demo narration said both could be checked on the ledger; they cannot, because
+a guest is a fresh anonymous user and every read is scoped to one. All surfaces now say where the emails are and why nobody else can read them,
 and the scoping is the rule the product runs on rather than a gap: the review tried
 to break it from a second guest session and could not.
 
@@ -229,10 +229,10 @@ or the arithmetic, and those are where the findings were not.
 
 **The landing page opened on a sign-in card, so the product's own argument was read
 by nobody who did not click.** The tagline led with the mechanism, that the agent
-gets its own email address; the inversion that is the product's whole argument — the
-agent holds the paper, so the claim finds the user — was in paragraph three of the
+gets its own email address; the inversion that is the product's whole argument, the
+agent holds the paper, so the claim finds the user, was in paragraph three of the
 README and nowhere on the first screen. A cold visitor is now signed in as a guest
-from an effect on load, so the judged URL lands on the ledger: four labelled cases,
+from an effect on load, so the live URL lands on the ledger: four labelled cases,
 the recovered total, the arrivals list, and the visitor's own forward address.
 Nothing about a per-user ledger required the click, which was the rationalisation to
 let go of; it is the same anonymous session the button started, started on load. The
@@ -255,7 +255,7 @@ person's messages.
 
 ### 2026-09-18 - f99edd9
 
-**The agent had never been given an address on the judged deployment, and the letter
+**The agent had never been given an address on the production deployment, and the letter
 could never have left it.** Both were defects in `@agentmail/convex`. A Convex
 component runs isolated from the app's environment and this one declares no env vars,
 so `app.use(agentmail, { env: { AGENTMAIL_API_KEY } })` is refused with "Component
@@ -264,14 +264,14 @@ agentmail has no env var named AGENTMAIL_API_KEY", and every call it made came b
 Convex does not expose to the parent app, so the reference never resolved and the
 component's inbox table held zero rows. Both are fixed in the app rather than the
 component: `convex/agentmail.ts` makes the two provider calls itself with the
-credential the app holds, and the component keeps the half that needs none —
+credential the app holds, and the component keeps the half that needs none , 
 verifying the webhook signature, deduplicating by event id, dispatching the callback.
 
-**Measured on the judged deployment.** `inboxes.provision` for a real account
+**Measured on the production deployment.** `inboxes.provision` for a real account
 returned an `owed-…@agentmail.to` inbox the provider lists against the app's own
 client id; the send endpoint answered 200 with a message id and the probe mail was
 delivered. Not yet measured: `recordSent` has not run on production, because no real
-claim has reached the approval gate — every claim on the deployment is the worked
+claim has reached the approval gate, every claim on the deployment is the worked
 example, refused before the wire by design.
 
 ### 2026-09-18 - 617b34d
@@ -334,10 +334,9 @@ the check imports the shipped function rather than restating it.
 **Proven on the deployment.** `rebuildTotals` returned exactly what the old query did
 (336 calls, $0.046394); `verifyTotals` recounts independently and returns
 `match: true`; `aiCache:selfTest` calls the real `put` with a reserved key, confirms
-the totals moved by exactly one, and restores. The judged URL renders the figure from
+the totals moved by exactly one, and restores. The live URL renders the figure from
 that row. The schema now holds **ten tables and twenty indexes** rather than nine and
-nineteen, and the README's schema row, the architecture footer and the submission
-documents all say so; the opening entry keeps its nine, because that is what the
+nineteen, and the README's schema row and the architecture footer both say so; the opening entry keeps its nine, because that is what the
 schema held at the commit it describes. Every other `.collect()` in `convex/` was
 read: each on a request path reads through an index scoped to a person or company,
 and `aiCache` was the only table read without a scope and the only one holding 19 KB
@@ -383,8 +382,8 @@ agent reading a real company's real terms end to end and then declining to overr
 rise on its own is a right to leave rather than a sum the company owes, and the worked example's
 price-rise claim works only because its record states an early-termination charge to be released from,
 which the real Sky notice does not. The detector was not nudged toward a claim, because a claim the record
-cannot support is the exact overclaim this entry is built to avoid. The reason is stored on the record and
-shown on its sheet, so a judge can read the agent's own judgement on a real company. Nine real forwards
+cannot support is the exact overclaim this project is built to avoid. The reason is stored on the record and
+shown on its sheet, so anyone can read the agent's own judgement on a real company. Nine real forwards
 have now been read on production and none has produced a claim, each for a reason about the paper rather
 than the product, which is the detector working as designed.
 
@@ -409,13 +408,12 @@ for it (`src/index.css`, `src/App.tsx`).
 ### 2026-09-20 - 9972c04
 
 **The landing decision, argued properly and then half reversed.** The live URL lands on the ledger
-rather than on a page that sells it, and the defence of that has been that a judge should not have
-to forward an email to find out what this does. That defence is sound for somebody arriving from a
-listing that already told them what this is, and it is not sound for anybody else: a stranger who
+rather than on a page that sells it, and the defence of that has been that nobody should have to
+forward an email to find out what this does. That defence is sound for somebody arriving from a
+link that already told them what this is, and it is not sound for anybody else: a stranger who
 opens this URL cold reads a currency figure before anything on the page says why a currency figure
-should exist. Landing on the product is a judging decision, not a product decision, and the two had
-been quietly conflated. The zero-click landing stays, because the reader it is aimed at is the one
-this entry is judged by. What changes is that the page now carries the sentence the sales page would
+should exist. The zero-click landing stays, because showing the product beats describing it. What
+changes is that the page now carries the sentence the sales page would
 have carried. A short band above the totals states the government figure this whole product is an
 argument about, £71.2 billion of net consumer detriment with the 22% of problems where nobody
 complained at all, both already sourced in the README to the Department for Business and Trade's

@@ -5,8 +5,8 @@ import { Anonymous } from "@convex-dev/auth/providers/Anonymous";
 /**
  * Convex Auth, with two ways in.
  *
- * `Anonymous` is the one that matters for a judge: the deployed site should be
- * usable in one click, with no account to create and no password to invent.
+ * `Anonymous` is the one that matters for a first visit: the deployed site
+ * should be usable in one click, with no account to create and no password to invent.
  * `Password` is there because a ledger of what you are owed is per-person data
  * and a session that survives a browser restart is the honest default for real
  * use. Every claim, inbox, counterparty and record is scoped to a user id and

@@ -178,7 +178,7 @@ export default defineSchema({
     /** When the thing was supposed to happen. */
     dueAt: v.optional(v.number()),
     occurredAt: v.number(),
-    /** Where the record came from, so a judge can see it is not invented. */
+    /** Where the record came from, so it can be seen not to be invented. */
     sourceMessageId: v.optional(v.id("messages")),
     /**
      * What the detector decided about this record, and why, in its own words.
@@ -351,7 +351,7 @@ export default defineSchema({
    *
    * One row, keyed on `scope`. It exists because `claims.spend` is a reactive
    * query the landing page subscribes to, and it read the whole log on every
-   * re-run. Measured on the judged deployment, 19 September 2026: **336 rows
+   * re-run. Measured on the production deployment, 19 September 2026: **336 rows
    * weighing 4.79 MB**, of which 253 embedding rows are 4.67 MB, because an
    * embedding is cached as its 1024 floats rendered as text at about 19 KB each.
    * Every write to the log therefore re-ran the query and every visitor paid the

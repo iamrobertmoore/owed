@@ -8,7 +8,7 @@
  * `process.env.AGENTMAIL_API_KEY` inside its own functions and declares no env
  * of its own, so there is no way to hand it the key either. Pushing
  * `app.use(agentmail, { env: { AGENTMAIL_API_KEY } })` is refused outright:
- * "Component agentmail has no env var named AGENTMAIL_API_KEY". On the judged
+ * "Component agentmail has no env var named AGENTMAIL_API_KEY". On the production
  * deployment every call the component made to the provider came back
  * "AGENTMAIL_API_KEY is not set on this Convex deployment", including the
  * send, so the letter could never have gone out.

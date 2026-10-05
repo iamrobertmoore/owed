@@ -45,9 +45,9 @@ export default function App() {
    * A cold visitor lands on the ledger, not on a form.
    *
    * This is the same anonymous session the button used to start, started on
-   * load instead. Nothing about a per-visitor ledger requires a click, and a
-   * judge comparing this against a rival whose product is visible in the
-   * first second should not have to spend that second on a login card.
+   * load instead. Nothing about a per-visitor ledger requires a click, and
+   * somebody deciding in the first second whether this is worth their time
+   * should not have to spend that second on a login card.
    */
   useEffect(() => {
     if (isLoading || isAuthenticated || tried.current) return;
@@ -262,9 +262,9 @@ function looksLikeClaimId(key: string): boolean {
  * A raw `From` header reads `Name <address@host>` and carries both. The address
  * is the stronger evidence that the message really came from where it claims,
  * which is why this row exists, but it is also the part that is somebody's
- * personal mailbox. This list is on screen in the video and in any judge's
- * session, so the display name is shown when the header has one and the address
- * only when it does not. A company writing from `billing@...` has no display
+ * personal mailbox. This list is on screen in every visitor's session,
+ * so the display name is shown when the header has one and the address only
+ * when it does not. A company writing from `billing@...` has no display
  * name and still shows in full, which is the case the evidence was for.
  */
 function Ledger({ onLeave }: { onLeave: () => void }) {

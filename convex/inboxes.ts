@@ -33,7 +33,7 @@ import type { Id } from "./_generated/dataModel";
  * Creating an inbox per visitor spent that allowance within the first few
  * people to open the deployed app, and whoever arrived after the last slot
  * got an error where an address should be. That is a hard failure on the one
- * screen a judge is guaranteed to see.
+ * screen every visitor is guaranteed to see.
  *
  * So a guest is given an alias on this inbox instead, `owed+<token>@…`. That
  * the provider delivers it here was measured against the live API on 16
@@ -140,8 +140,8 @@ export const provision = action({
     // nothing, and mail sent to it still lands in this owner's ledger and
     // nowhere else, because the address is what the inbound router matches on.
     // The alternative, which is what the app did before this, was an error
-    // where an address should be, on the one screen a judge is guaranteed to
-    // see.
+    // where an address should be, on the one screen every visitor is
+    // guaranteed to see.
     //
     // The failure is logged rather than swallowed, so a deployment whose
     // credential is refused is visible in the logs instead of looking like a

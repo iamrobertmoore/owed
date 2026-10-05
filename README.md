@@ -1,7 +1,7 @@
 <!--
   The claim links below use stable slugs (demo-found, demo-polite, demo-silent,
   demo-gate) rather than row ids. A Convex id belongs to whoever created the row,
-  so a link built from one is dead for every other visitor, which is every judge.
+  so a link built from one is dead for every other visitor.
   A slug resolves against the caller's own seeded copy instead, which is the
   reason the worked example is seeded on arrival rather than only on request.
 -->
@@ -20,7 +20,7 @@ That inversion is the product. Nobody has to remember that a lens arrived cracke
 
 I am the user. My paper trail is the usual mess: a lens, two hotel bookings, three subscriptions I meant to cancel, train tickets. The refunds I never chased are the ones too small to be worth an evening and too annoying to let go. Owed is for the person who is not going to spend that evening, and should not have to.
 
-Built with **Convex**, **AgentMail**, **Firecrawl** and **OpenAI**, for the **Convex All Gas Hackathon**.
+Built with **Convex**, **AgentMail**, **Firecrawl** and **OpenAI**.
 
 ## A minute inside the product
 
@@ -153,5 +153,7 @@ npm run deploy
 The worked example is reconstructed content, not a live mailbox, and it is labelled as the worked example on every row it appears on. Its counterparties are fictional businesses on `.example` domains, which RFC 2606 reserves so they can never resolve. It loads only onto an empty ledger, so it can never sit beside a claim the owner did not create, and pressing send on it writes to the timeline that nothing was transmitted. It exists so the product is legible in a minute rather than after a forward and a wait.
 
 Real claims would run on real forwarded mail with the personal details removed; production has detected none yet, and the nine emails described above are the real paper in the product. The £71.2 billion figure is the government's, for the UK, and measures detriment rather than anything Owed recovers. The survey figures are cited above. The banner and the diagram are hand-authored SVG in `docs/`.
+
+A day-by-day record of how this was built, including what was wrong before it was right, is in [BUILD-LOG.md](BUILD-LOG.md).
 
 Built by [Robert Moore](https://github.com/iamrobertmoore). **MIT**. See [LICENSE](LICENSE).

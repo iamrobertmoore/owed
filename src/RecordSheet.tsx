@@ -58,8 +58,8 @@ export function RecordSheet({
             <div className="section-head">
               <span className="pill owed">{kindLabel(record.kind)}</span>
               {/* A seeded record read on its own is indistinguishable from a
-                  real one, and the difference is the whole basis on which a
-                  judge should read the rest of the page. */}
+                  real one, and the difference is the whole basis on which the
+                  rest of the page should be read. */}
               {record.fromExample ? <span className="chip">worked example</span> : null}
               <button className="act ghost" onClick={onClose} type="button">
                 Close

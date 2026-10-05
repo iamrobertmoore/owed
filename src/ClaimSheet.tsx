@@ -78,8 +78,8 @@ export function ClaimSheet({
                 is the one screen a visitor can reach without passing the ledger
                 and its note. It has to carry the label itself: a reconstructed
                 claim read on its own is indistinguishable from a real one, and
-                the difference is the whole basis on which a judge should read
-                the rest of the page.
+                the difference is the whole basis on which the rest of the page
+                should be read.
               */}
               {claim.demoKey ? <span className="chip">worked example</span> : null}
               <button className="act ghost" onClick={onClose} type="button">

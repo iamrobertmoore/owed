@@ -175,7 +175,7 @@ export const approve = mutation({
       throw new Error(`Claim is ${claim.stage}, not awaiting approval`);
     }
 
-    // The worked example must never put mail on the wire. A judge pressing
+    // The worked example must never put mail on the wire. Anyone pressing
     // send on a demo row gets the rest of the interaction and a timeline that
     // says plainly that nothing was transmitted. The alternative was worse
     // both ways: a real email to a fictional counterparty, or a button that
@@ -404,7 +404,7 @@ export const recordSent = internalMutation({
  * The letter did not leave.
  *
  * Recorded as a note rather than as a send, because the timeline is read back
- * to a judge and "sent" would be a false statement about what happened. The
+ * to the owner and "sent" would be a false statement about what happened. The
  * claim stays where it was, so pressing send again is a retry rather than a
  * second dispute.
  */
